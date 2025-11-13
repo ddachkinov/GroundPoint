@@ -4,6 +4,8 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -21,6 +23,22 @@ function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <ProtectedRoute>
+            <ProjectsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:id"
+        element={
+          <ProtectedRoute>
+            <ProjectDetailPage />
           </ProtectedRoute>
         }
       />

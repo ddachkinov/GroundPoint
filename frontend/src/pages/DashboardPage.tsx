@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 export function DashboardPage() {
@@ -44,16 +45,45 @@ export function DashboardPage() {
               Organization ID: <strong>{user?.organizationId}</strong>
             </p>
 
-            <div className="mt-8 bg-blue-50 border border-blue-200 rounded p-4">
-              <p className="text-blue-800 text-sm">
-                🚧 Dashboard features are under development. Coming soon:
-              </p>
-              <ul className="mt-2 text-blue-700 text-sm list-disc list-inside">
-                <li>Project management</li>
-                <li>Site creation and monitoring</li>
-                <li>Image upload and timeline view</li>
-                <li>Invoice generation and payments</li>
-              </ul>
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Link
+                  to="/projects"
+                  className="block p-6 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 transition-colors"
+                >
+                  <h4 className="text-lg font-semibold text-blue-900 mb-2">
+                    Manage Projects
+                  </h4>
+                  <p className="text-gray-600 text-sm">
+                    Create and manage construction projects and monitoring sites
+                  </p>
+                </Link>
+                <div className="block p-6 bg-gray-50 border-2 border-gray-200 rounded-lg opacity-60">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">
+                    Upload Images
+                  </h4>
+                  <p className="text-gray-500 text-sm">
+                    Coming soon: Upload drone images and view timeline
+                  </p>
+                </div>
+                <div className="block p-6 bg-gray-50 border-2 border-gray-200 rounded-lg opacity-60">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">
+                    View Reports
+                  </h4>
+                  <p className="text-gray-500 text-sm">
+                    Coming soon: Generate progress reports and analytics
+                  </p>
+                </div>
+                <div className="block p-6 bg-gray-50 border-2 border-gray-200 rounded-lg opacity-60">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">
+                    Billing
+                  </h4>
+                  <p className="text-gray-500 text-sm">
+                    Coming soon: Manage invoices and payments
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
