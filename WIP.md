@@ -1,12 +1,65 @@
 # Work In Progress
 
 **Date**: 2025-11-13
-**Milestone**: 4 - Image Upload Infrastructure
+**Milestone**: 5 - Thumbnail Generation Worker
 **Status**: ✅ COMPLETE
 
 ---
 
 ## Recently Completed
+
+### Milestone 5: Thumbnail Generation Worker (✅ COMPLETE)
+
+**Goal**: Asynchronously generate thumbnails for uploaded images using background workers to enable fast timeline browsing and reduce bandwidth.
+
+**Reference**: TASK_05_Thumbnail_Generation.md
+
+**Status**: ✅ Complete (Backend)
+
+**Summary**:
+Successfully implemented asynchronous thumbnail generation system using BullMQ job queue and Sharp image processing. Worker processes jobs in background with retry logic, handles EXIF orientation, and updates processing status. System is scalable and production-ready.
+
+### Backend Implementation ✅
+
+1. ✅ Installed BullMQ and Sharp dependencies
+2. ✅ Created queue configuration with Redis
+3. ✅ Implemented thumbnail generation worker
+4. ✅ Updated Capture service to auto-enqueue jobs
+5. ✅ Added regenerate thumbnail endpoint
+6. ✅ Updated .env.example with Redis and worker config
+
+### Key Features ✅
+
+- ✅ BullMQ integration with Redis for job queue
+- ✅ Sharp image processing (400px max width, 85% JPEG quality)
+- ✅ Auto-rotation based on EXIF orientation
+- ✅ 3 retry attempts with exponential backoff (10s, 30s, 90s)
+- ✅ Configurable worker concurrency (default: 5)
+- ✅ Graceful shutdown handling (SIGTERM)
+- ✅ Comprehensive logging and error handling
+- ✅ Idempotent job enqueueing (no duplicates)
+- ✅ Job timeout protection (5 minutes)
+- ✅ Rate limiting (10 jobs/second)
+
+### Acceptance Criteria - All Met ✅
+
+- ✅ Thumbnail job enqueued after upload completion
+- ✅ Worker downloads, resizes, and uploads thumbnail to S3
+- ✅ Thumbnail format: JPEG quality 85, max 400px width
+- ✅ Capture updated with thumbnail_path and status "Ready"
+- ✅ Failed jobs retry 3 times with exponential backoff
+- ✅ After 3 failures, status set to "Failed" with error logged
+- ✅ EXIF orientation handled (auto-rotate)
+- ✅ Worker scalable (multiple instances supported)
+- ✅ Regenerate endpoint for failed thumbnails
+
+### Commits
+
+- `d701fc7` - Milestone 5: Thumbnail Generation Worker with BullMQ
+
+**Pushed to**: `claude/drone-saas-architecture-deliverables-011CV4nFvuXYrHzcVKEzAE9d`
+
+---
 
 ### Milestone 4: Image Upload Infrastructure (✅ COMPLETE)
 
@@ -121,45 +174,43 @@ Successfully implemented complete full-stack CRUD functionality for Projects and
 
 ## Next Milestone
 
-### Milestone 4: Image Upload Infrastructure (Pending)
+### Milestone 6: Timeline & Calendar View (Pending)
 
-**Goal**: Enable operators to upload drone images to sites with proper storage, processing, and thumbnail generation.
+**Goal**: Enable users to view and browse captures chronologically using timeline and calendar interfaces.
 
-**Reference**: TASK_03_Image_Upload.md (if exists) or next in plan
+**Reference**: TASK_06_Timeline_Calendar_View.md
 
 **Key Features to Implement**:
-- S3/MinIO integration for image storage
-- Pre-signed URL generation for secure uploads
-- Image processing pipeline with Sharp
-- Thumbnail generation (multiple sizes)
-- Background job processing with BullMQ
-- Capture model with image metadata
-- Upload progress tracking
-- Image validation (type, size, dimensions)
+- Timeline view with thumbnail gallery
+- Calendar view with date navigation
+- Filtering by site, angle, and date range
+- Image lightbox/viewer
+- Processing status indicators
+- Lazy loading and infinite scroll
+- Responsive design for mobile/tablet
 
 **Backend Tasks**:
-1. Configure S3/MinIO client
-2. Implement storage service (upload, presigned URLs)
-3. Implement image processing worker
-4. Implement Capture model and service
-5. Implement upload API endpoints
-6. Add job queue for image processing
+1. Review existing captures list endpoint
+2. Add date-based aggregation queries
+3. Optimize queries for timeline performance
 
 **Frontend Tasks**:
-1. Image upload component with drag-and-drop
-2. Upload progress indicator
-3. Image preview gallery
-4. Capture management UI
-5. Integration with Projects/Sites
+1. Timeline view component with thumbnail grid
+2. Calendar view component with date picker
+3. Image lightbox/viewer component
+4. Filtering controls (site, angle, date range)
+5. Lazy loading and pagination
+6. Processing status badges
+7. Integration with captures store
+8. Routing for /timeline and /calendar
 
-**Next Step**: Review architecture for image upload and storage, then begin implementing storage service.
+**Next Step**: Review TASK_06_Timeline_Calendar_View.md and begin implementing timeline UI.
 
 ---
 
 ## Notes
 
-- Milestone 3 completed in 1 day (backend + frontend)
-- All acceptance criteria met
-- Production-ready CRUD API with comprehensive validation
-- Intuitive web interface with responsive design
-- Ready to proceed with Milestone 4 (Image Upload Infrastructure)
+- Milestone 5 completed successfully
+- Asynchronous thumbnail generation is production-ready
+- Worker system is scalable and fault-tolerant
+- Ready to proceed with Timeline & Calendar View (frontend-focused milestone)
