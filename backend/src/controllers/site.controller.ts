@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { siteService } from '../services/site.service';
 import { projectService } from '../services/project.service';
+import { angleService } from '../services/angle.service';
 import { updateSiteSchema } from '../validators/project.validator';
+import { createAngleSchema } from '../validators/angle.validator';
 import { z } from 'zod';
 
 /**
@@ -259,6 +261,92 @@ export class SiteController {
           message: 'Failed to delete site',
         },
       });
+    }
+  }
+
+  /**
+   * Create angle for site
+   * POST /api/v1/sites/:id/angles
+   */
+  async createAngle(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { id: siteId } = req.params;
+
+      // Validate input
+      const input = createAngleSchema.parse(req.body);
+
+      // Create angle
+      const angle = await angleService.createAngle(siteId, input, req.user.organizationId);
+
+      res.status(201).json({ angle });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          error: 'Validation error',
+          details: error.errors,
+        });
+        return;
+      }
+
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          res.status(404).json({ error: error.message });
+          return;
+        }
+
+        if (error.message.includes('Access denied')) {
+          res.status(403).json({ error: error.message });
+          return;
+        }
+
+        if (error.message.includes('already exists')) {
+          res.status(400).json({ error: error.message });
+          return;
+        }
+      }
+
+      console.error('Create angle error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * List angles for site
+   * GET /api/v1/sites/:id/angles
+   */
+  async listAngles(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { id: siteId } = req.params;
+
+      // List angles
+      const angles = await angleService.listAngles(siteId, req.user.organizationId);
+
+      res.status(200).json({ angles });
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          res.status(404).json({ error: error.message });
+          return;
+        }
+
+        if (error.message.includes('Access denied')) {
+          res.status(403).json({ error: error.message });
+          return;
+        }
+      }
+
+      console.error('List angles error:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   }
 }

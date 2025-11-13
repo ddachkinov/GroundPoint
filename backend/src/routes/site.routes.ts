@@ -29,4 +29,18 @@ router.patch('/:id', requireOperator, (req, res) => siteController.updateSite(re
  */
 router.delete('/:id', requireOperator, (req, res) => siteController.deleteSite(req, res));
 
+/**
+ * @route   POST /api/v1/sites/:id/angles
+ * @desc    Create angle for site
+ * @access  Operator Admin/Member
+ */
+router.post('/:id/angles', requireOperator, (req, res) => siteController.createAngle(req, res));
+
+/**
+ * @route   GET /api/v1/sites/:id/angles
+ * @desc    List angles for site
+ * @access  Authenticated users
+ */
+router.get('/:id/angles', (req, res) => siteController.listAngles(req, res));
+
 export default router;
