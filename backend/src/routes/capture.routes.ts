@@ -29,6 +29,13 @@ router.post('/complete', requireOperator, (req, res) =>
 );
 
 /**
+ * Get calendar data (dates with capture counts)
+ * GET /api/v1/captures/calendar
+ * Accessible by: All authenticated users
+ */
+router.get('/calendar', (req, res) => captureController.getCalendarData(req, res));
+
+/**
  * List captures
  * GET /api/v1/captures
  * Accessible by: All authenticated users

@@ -292,6 +292,56 @@ class CaptureController {
   }
 
   /**
+   * Get calendar data (dates with capture counts)
+   * GET /api/v1/captures/calendar
+   */
+  async getCalendarData(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { month, site_id, project_id, angle_id } = req.query;
+
+      // Default to current month if not provided
+      const targetMonth = month
+        ? (month as string)
+        : new Date().toISOString().slice(0, 7);
+
+      // Validate month format
+      if (!/^\d{4}-\d{2}$/.test(targetMonth)) {
+        res.status(400).json({ error: 'Invalid month format. Use YYYY-MM.' });
+        return;
+      }
+
+      // Get calendar data
+      const dates = await captureService.getCalendarData(
+        targetMonth,
+        site_id as string | undefined,
+        project_id as string | undefined,
+        angle_id as string | undefined,
+        user.organizationId
+      );
+
+      res.status(200).json({
+        month: targetMonth,
+        dates,
+      });
+    } catch (error: any) {
+      console.error('Error getting calendar data:', error);
+
+      if (error.message.includes('Access denied')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
    * Regenerate thumbnail for a capture
    * POST /api/v1/captures/:id/regenerate-thumbnail
    */

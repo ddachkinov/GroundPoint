@@ -452,6 +452,91 @@ class CaptureService {
   }
 
   /**
+   * Get calendar data (dates with capture counts for a month)
+   */
+  async getCalendarData(
+    month: string,
+    siteId?: string,
+    projectId?: string,
+    angleId?: string,
+    operatorOrgId?: string
+  ): Promise<Array<{ date: string; count: number }>> {
+    // Parse month (format: YYYY-MM)
+    const [year, monthNum] = month.split('-').map(Number);
+    const startDate = new Date(year, monthNum - 1, 1);
+    const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
+
+    // Build where clause
+    const where: Prisma.CaptureWhereInput = {
+      captureDate: {
+        gte: startDate,
+        lte: endDate,
+      },
+    };
+
+    if (siteId) {
+      // Verify site access
+      const site = await prisma.site.findUnique({
+        where: { id: siteId },
+        include: {
+          project: {
+            select: {
+              operatorOrgId: true,
+            },
+          },
+        },
+      });
+
+      if (!site || (operatorOrgId && site.project.operatorOrgId !== operatorOrgId)) {
+        throw new Error('Access denied');
+      }
+
+      where.siteId = siteId;
+    } else if (projectId) {
+      // Verify project access
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+          operatorOrgId: true,
+        },
+      });
+
+      if (!project || (operatorOrgId && project.operatorOrgId !== operatorOrgId)) {
+        throw new Error('Access denied');
+      }
+
+      where.site = {
+        projectId,
+      };
+    }
+
+    if (angleId) {
+      where.angleId = angleId;
+    }
+
+    // Group by date and count
+    const results = await prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
+      SELECT
+        DATE(capture_date) as date,
+        COUNT(*) as count
+      FROM captures
+      WHERE
+        capture_date >= ${startDate}
+        AND capture_date <= ${endDate}
+        ${siteId ? Prisma.sql`AND site_id = ${siteId}` : Prisma.empty}
+        ${projectId && !siteId ? Prisma.sql`AND site_id IN (SELECT id FROM sites WHERE project_id = ${projectId})` : Prisma.empty}
+        ${angleId ? Prisma.sql`AND angle_id = ${angleId}` : Prisma.empty}
+      GROUP BY DATE(capture_date)
+      ORDER BY date ASC
+    `;
+
+    return results.map((row) => ({
+      date: row.date.toISOString().split('T')[0],
+      count: Number(row.count),
+    }));
+  }
+
+  /**
    * Regenerate thumbnail for a capture
    */
   async regenerateThumbnail(

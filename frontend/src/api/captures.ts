@@ -87,11 +87,13 @@ export interface CompleteUploadInput {
  */
 export interface ListCapturesQuery {
   site_id?: string;
+  project_id?: string;
   angle_id?: string;
   start_date?: string;
   end_date?: string;
   limit?: number;
   offset?: number;
+  sort?: 'date_asc' | 'date_desc';
 }
 
 /**
@@ -110,6 +112,32 @@ export interface CapturesListResponse {
 export interface CreateAngleInput {
   name: string;
   description?: string;
+}
+
+/**
+ * Calendar query
+ */
+export interface CalendarQuery {
+  site_id?: string;
+  project_id?: string;
+  angle_id?: string;
+  month?: string; // YYYY-MM format
+}
+
+/**
+ * Calendar date with count
+ */
+export interface CalendarDate {
+  date: string; // YYYY-MM-DD
+  count: number;
+}
+
+/**
+ * Calendar response
+ */
+export interface CalendarResponse {
+  month: string;
+  dates: CalendarDate[];
 }
 
 /**
@@ -195,5 +223,25 @@ export const capturesAPI = {
   listAngles: async (siteId: string): Promise<Angle[]> => {
     const response = await apiClient.get<{ angles: Angle[] }>(`/sites/${siteId}/angles`);
     return response.data.angles;
+  },
+
+  /**
+   * Get calendar data (dates with capture counts)
+   */
+  getCalendarData: async (query?: CalendarQuery): Promise<CalendarResponse> => {
+    const response = await apiClient.get<CalendarResponse>('/captures/calendar', {
+      params: query,
+    });
+    return response.data;
+  },
+
+  /**
+   * Regenerate thumbnail for a capture
+   */
+  regenerateThumbnail: async (captureId: string): Promise<{ message: string; capture_id: string }> => {
+    const response = await apiClient.post<{ message: string; capture_id: string }>(
+      `/captures/${captureId}/regenerate-thumbnail`
+    );
+    return response.data;
   },
 };
