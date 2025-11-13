@@ -114,25 +114,43 @@ enum NotificationStatus {
 }
 
 model User {
-  id                String            @id @default(uuid())
-  email             String            @unique
-  passwordHash      String            @map("password_hash")
-  firstName         String            @map("first_name")
-  lastName          String            @map("last_name")
-  role              UserRole
-  organizationId    String            @map("organization_id")
-  organization      Organization      @relation(fields: [organizationId], references: [id])
-  mfaEnabled        Boolean           @default(false) @map("mfa_enabled")
-  mfaSecret         String?           @map("mfa_secret")
-  emailVerified     Boolean           @default(false) @map("email_verified")
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
-  captures          Capture[]         @relation("UploadedBy")
-  projectMembers    ProjectMember[]
-  sentInvitations   Invitation[]      @relation("InvitedBy")
-  receivedNotifications Notification[]
+  id                             String            @id @default(uuid())
+  email                          String            @unique
+  passwordHash                   String            @map("password_hash")
+  firstName                      String            @map("first_name")
+  lastName                       String            @map("last_name")
+  role                           UserRole
+  organizationId                 String            @map("organization_id")
+  organization                   Organization      @relation(fields: [organizationId], references: [id])
+  mfaEnabled                     Boolean           @default(false) @map("mfa_enabled")
+  mfaSecret                      String?           @map("mfa_secret")
+  emailVerified                  Boolean           @default(false) @map("email_verified")
+  emailVerificationToken         String?           @map("email_verification_token")
+  emailVerificationTokenExpiresAt DateTime?        @map("email_verification_token_expires_at")
+  passwordResetToken             String?           @map("password_reset_token")
+  passwordResetTokenExpiresAt    DateTime?         @map("password_reset_token_expires_at")
+  createdAt                      DateTime          @default(now()) @map("created_at")
+  updatedAt                      DateTime          @updatedAt @map("updated_at")
+  captures                       Capture[]         @relation("UploadedBy")
+  projectMembers                 ProjectMember[]
+  sentInvitations                Invitation[]      @relation("InvitedBy")
+  receivedNotifications          Notification[]
+  refreshTokens                  RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }
 
 model Organization {
