@@ -1,26 +1,36 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </div>
-  );
-}
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-function Home() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">GroundPoint</h1>
-        <p className="text-xl text-gray-600">
-          Drone Construction Progress Monitoring Platform
-        </p>
-        <p className="text-sm text-gray-500 mt-2">MVP Development in Progress</p>
-      </div>
-    </div>
+      {/* Protected routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Default route */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* 404 - Not found */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
   );
 }
 
