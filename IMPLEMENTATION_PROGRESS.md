@@ -411,14 +411,14 @@ Frontend:
 
 ---
 
-### Milestone 4: Image Upload Infrastructure (Backend Complete)
+### Milestone 4: Image Upload Infrastructure (✅ COMPLETE)
 
 **Started**: 2025-11-13
-**Backend Completed**: 2025-11-13
-**Status**: Backend ✅ Complete, Frontend Pending
+**Completed**: 2025-11-13
+**Status**: ✅ Complete (Backend + Frontend)
 
 **Summary**:
-Successfully implemented complete backend for image upload infrastructure using pre-signed S3 URLs, enabling secure and scalable direct-to-S3 uploads. Operators can request upload URLs, upload files directly to S3, and complete uploads with metadata (capture date, GPS, weather, notes). All 5 REST API endpoints are production-ready with comprehensive validation and authorization.
+Successfully implemented complete full-stack image upload infrastructure using pre-signed S3 URLs, enabling secure and scalable direct-to-S3 uploads. Operators can upload drone images through an intuitive UI with real-time progress tracking, metadata input (capture date, GPS, weather, notes), and angle management. All 7 REST API endpoints are production-ready with comprehensive validation and authorization. Frontend provides seamless upload experience with S3 direct upload integration.
 
 **Completed Tasks**:
 
@@ -436,22 +436,43 @@ Backend:
 - ✅ Created .env.example with S3 configuration
 - ✅ Implemented organization-scoped path structure
 - ✅ Implemented orphaned capture cleanup
+- ✅ Implemented Angle validator and service
+- ✅ Added Angle create/list endpoints to Site controller
 
-**Files Created**: 8 new backend files (~900 lines)
+Frontend:
+- ✅ Implemented Captures API client with all endpoints
+- ✅ Implemented Captures store with Zustand for state management
+- ✅ Implemented Upload modal component with full feature set
+- ✅ Integrated upload UI with Project detail page
+- ✅ Implemented angle management (create on-the-fly)
+- ✅ Implemented real-time upload progress tracking
+- ✅ Added client-side validation
+- ✅ Added image preview functionality
+
+**Files Created**: 14 new files (10 backend, 4 frontend, ~1,900 lines)
 
 Backend:
 - `backend/src/config/s3.config.ts` (55 lines) - S3 client and path structure
 - `backend/src/services/storage.service.ts` (140 lines) - S3 operations
 - `backend/src/services/capture.service.ts` (335 lines) - Capture business logic
+- `backend/src/services/angle.service.ts` (95 lines) - Angle business logic
 - `backend/src/validators/capture.validator.ts` (75 lines) - Zod schemas
+- `backend/src/validators/angle.validator.ts` (10 lines) - Angle Zod schema
 - `backend/src/controllers/capture.controller.ts` (250 lines) - Endpoint handlers
 - `backend/src/routes/capture.routes.ts` (45 lines) - Route definitions
 - `backend/.env.example` - Environment variables documentation
 
-**Key Files Modified**: 3 files
+Frontend:
+- `frontend/src/api/captures.ts` (220 lines) - API client
+- `frontend/src/store/capturesStore.ts` (280 lines) - Zustand store
+- `frontend/src/components/captures/UploadCaptureModal.tsx` (480 lines) - Upload UI
+
+**Key Files Modified**: 5 files
 - `backend/src/routes/index.ts` - Registered capture routes
+- `backend/src/controllers/site.controller.ts` - Added angle endpoints
+- `backend/src/routes/site.routes.ts` - Added angle routes
 - `backend/package.json` - Added AWS SDK dependencies
-- `STATUS.md` - Updated current milestone
+- `frontend/src/pages/ProjectDetailPage.tsx` - Integrated upload modal
 
 **API Endpoints Implemented**:
 - POST /api/v1/captures/upload-url - Request pre-signed upload URL
@@ -459,6 +480,8 @@ Backend:
 - GET /api/v1/captures - List captures with filtering (site, angle, date range)
 - GET /api/v1/captures/:id - Get capture details with pre-signed URLs
 - DELETE /api/v1/captures/:id - Delete capture and S3 files
+- POST /api/v1/sites/:id/angles - Create angle for site
+- GET /api/v1/sites/:id/angles - List angles for site
 
 **Validation Rules**:
 - Supported file types: JPEG, PNG, TIFF
@@ -498,15 +521,56 @@ Backend:
 - File metadata extraction
 - Secure deletion with S3 cleanup
 
+**Frontend Features**:
+- File selection with image preview
+- Real-time upload progress (0-100%)
+- Angle selection with quick-add feature
+- Capture date picker with validation
+- GPS coordinates input (-90 to 90, -180 to 180)
+- Weather condition selection
+- Notes textarea (500 char limit with counter)
+- Multi-step upload workflow visualization
+- Client-side file validation (type, size)
+- Error handling with user-friendly messages
+- Auto-close after successful upload
+- Upload prevention during active transfer
+- Integration with Project detail page
+
+**Upload Workflow**:
+1. User clicks "Upload" button on site in Project detail
+2. Modal opens with file selection
+3. User selects image (JPEG/PNG/TIFF, max 50MB)
+4. Image preview displays
+5. User fills metadata: angle, date, GPS, weather, notes
+6. User can create new angle on-the-fly
+7. Click "Upload Image":
+   - Request pre-signed URL from backend (validation)
+   - Upload file directly to S3 (bypasses backend)
+   - Track upload progress in real-time
+   - Complete upload with metadata
+   - Display success message
+8. Modal auto-closes after 2 seconds
+9. Captures list refreshes automatically
+
+**Angle Management**:
+- List angles for site
+- Create new angle with inline form
+- Duplicate name validation
+- Automatic sort order assignment
+- Cached in store for performance
+
 **Pending Tasks**:
-- Frontend implementation (upload UI, progress tracking, EXIF extraction)
 - Thumbnail generation job queue (TASK_05)
 - Storage quota enforcement (requires billing implementation)
 - Monthly upload count quota (requires billing implementation)
 - EXIF data extraction and sanitization
 - Image processing pipeline
+- Captures gallery/timeline view
 - Unit and integration tests
 
 **Blockers**: None
 
-**Duration**: 1 day (backend only)
+**Duration**: 1 day (backend + frontend)
+
+---
+
