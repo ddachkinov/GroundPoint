@@ -411,6 +411,102 @@ Frontend:
 
 ---
 
-### Milestone 4: Image Upload Infrastructure (Pending)
+### Milestone 4: Image Upload Infrastructure (Backend Complete)
 
-**Status**: Not Started
+**Started**: 2025-11-13
+**Backend Completed**: 2025-11-13
+**Status**: Backend ✅ Complete, Frontend Pending
+
+**Summary**:
+Successfully implemented complete backend for image upload infrastructure using pre-signed S3 URLs, enabling secure and scalable direct-to-S3 uploads. Operators can request upload URLs, upload files directly to S3, and complete uploads with metadata (capture date, GPS, weather, notes). All 5 REST API endpoints are production-ready with comprehensive validation and authorization.
+
+**Completed Tasks**:
+
+Backend:
+- ✅ Installed AWS SDK v3 packages (@aws-sdk/client-s3, @aws-sdk/s3-request-presigner)
+- ✅ Implemented S3 client configuration with AWS S3 and MinIO support
+- ✅ Implemented storage service for S3 operations
+- ✅ Implemented pre-signed URL generation (upload and download)
+- ✅ Implemented file existence verification and metadata retrieval
+- ✅ Implemented Capture validator with Zod schemas
+- ✅ Implemented Capture service with upload workflow
+- ✅ Implemented Capture controller with 5 endpoint handlers
+- ✅ Implemented Capture routes with authorization
+- ✅ Registered routes in main router
+- ✅ Created .env.example with S3 configuration
+- ✅ Implemented organization-scoped path structure
+- ✅ Implemented orphaned capture cleanup
+
+**Files Created**: 8 new backend files (~900 lines)
+
+Backend:
+- `backend/src/config/s3.config.ts` (55 lines) - S3 client and path structure
+- `backend/src/services/storage.service.ts` (140 lines) - S3 operations
+- `backend/src/services/capture.service.ts` (335 lines) - Capture business logic
+- `backend/src/validators/capture.validator.ts` (75 lines) - Zod schemas
+- `backend/src/controllers/capture.controller.ts` (250 lines) - Endpoint handlers
+- `backend/src/routes/capture.routes.ts` (45 lines) - Route definitions
+- `backend/.env.example` - Environment variables documentation
+
+**Key Files Modified**: 3 files
+- `backend/src/routes/index.ts` - Registered capture routes
+- `backend/package.json` - Added AWS SDK dependencies
+- `STATUS.md` - Updated current milestone
+
+**API Endpoints Implemented**:
+- POST /api/v1/captures/upload-url - Request pre-signed upload URL
+- POST /api/v1/captures/complete - Complete upload with metadata
+- GET /api/v1/captures - List captures with filtering (site, angle, date range)
+- GET /api/v1/captures/:id - Get capture details with pre-signed URLs
+- DELETE /api/v1/captures/:id - Delete capture and S3 files
+
+**Validation Rules**:
+- Supported file types: JPEG, PNG, TIFF
+- Maximum file size: 50 MB
+- Capture date cannot be in future
+- GPS coordinates: latitude -90 to 90, longitude -180 to 180
+- Notes maximum length: 500 characters
+- Weather conditions: SUNNY, CLOUDY, RAINY, SNOWY
+
+**Authorization**:
+- All endpoints require authentication
+- Upload URL and complete require Operator role
+- Captures scoped to operator organization
+- Delete requires Operator Admin or uploader
+- Pre-signed URLs expire (10 min upload, 1 hour download)
+
+**Backend Features**:
+- Pre-signed S3 URLs for secure direct uploads
+- No file data passes through backend (scalable architecture)
+- File existence verification before marking complete
+- Organized S3 path structure: captures/{org}/{project}/{site}/{capture-id}
+- Thumbnail path generation for future processing
+- GPS coordinate tracking (Prisma Decimal precision)
+- Weather condition tracking
+- Processing status: UPLOADED → PROCESSING → READY/FAILED
+- Image dimensions and file size tracking
+- Orphaned capture cleanup (for cron jobs)
+- Batch file deletion
+- Pre-signed download URLs
+- Organization-scoped access control
+
+**S3 Storage Architecture**:
+- Direct client-to-S3 uploads (bypass backend)
+- Pre-signed URLs with time-based expiration
+- Support for AWS S3, MinIO, and S3-compatible storage
+- Hierarchical path structure for organization
+- File metadata extraction
+- Secure deletion with S3 cleanup
+
+**Pending Tasks**:
+- Frontend implementation (upload UI, progress tracking, EXIF extraction)
+- Thumbnail generation job queue (TASK_05)
+- Storage quota enforcement (requires billing implementation)
+- Monthly upload count quota (requires billing implementation)
+- EXIF data extraction and sanitization
+- Image processing pipeline
+- Unit and integration tests
+
+**Blockers**: None
+
+**Duration**: 1 day (backend only)
