@@ -1,8 +1,48 @@
 # Work In Progress
 
 **Date**: 2025-11-13
-**Milestone**: 5 - Thumbnail Generation Worker
-**Status**: ✅ COMPLETE
+**Milestone**: 6 - Timeline & Calendar View
+**Status**: 🔄 IN PROGRESS (Backend Complete)
+
+---
+
+## Currently Working On
+
+### Milestone 6: Timeline & Calendar View (🔄 Partial - Backend Complete)
+
+**Goal**: Enable users to view and browse captures chronologically using timeline and calendar interfaces.
+
+**Reference**: TASK_06_Timeline_Calendar_View.md
+
+**Status**: Backend Complete ✅ | Frontend Pending ⏳
+
+**Summary**:
+Backend calendar aggregation API is complete. The endpoint provides efficient date-based capture counts for rendering calendar UI. Frontend implementation (timeline page, calendar component, thumbnail grid, lightbox) is pending.
+
+### Backend Implementation ✅
+
+1. ✅ Calendar aggregation service method
+2. ✅ Calendar controller endpoint (GET /api/v1/captures/calendar)
+3. ✅ Optimized SQL query with DATE grouping
+4. ✅ Support for site_id, project_id, angle_id filtering
+5. ✅ Authorization checks for cross-organization access
+6. ✅ Updated captures API client with calendar methods
+
+### Frontend Implementation ⏳
+
+- ⏳ Timeline page component
+- ⏳ Calendar component with date navigation
+- ⏳ Thumbnail grid with lazy loading
+- ⏳ Image lightbox viewer
+- ⏳ Filtering controls (site, angle, date range)
+- ⏳ List view (optional)
+- ⏳ Routing and navigation
+
+### Commits
+
+- `cfca4eb` - Milestone 6 (Partial): Add Calendar Aggregation API
+
+**Pushed to**: `claude/drone-saas-architecture-deliverables-011CV4nFvuXYrHzcVKEzAE9d`
 
 ---
 
