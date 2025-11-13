@@ -49,4 +49,13 @@ router.get('/:id', (req, res) => captureController.getCapture(req, res));
  */
 router.delete('/:id', (req, res) => captureController.deleteCapture(req, res));
 
+/**
+ * Regenerate thumbnail
+ * POST /api/v1/captures/:id/regenerate-thumbnail
+ * Requires: Operator Admin or uploader
+ */
+router.post('/:id/regenerate-thumbnail', (req, res) =>
+  captureController.regenerateThumbnail(req, res)
+);
+
 export default router;

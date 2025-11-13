@@ -290,6 +290,49 @@ class CaptureController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  /**
+   * Regenerate thumbnail for a capture
+   * POST /api/v1/captures/:id/regenerate-thumbnail
+   */
+  async regenerateThumbnail(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const captureId = req.params.id;
+
+      // Regenerate thumbnail
+      await captureService.regenerateThumbnail(captureId, user.id, user.organizationId);
+
+      res.status(200).json({
+        message: 'Thumbnail generation enqueued',
+        capture_id: captureId,
+      });
+    } catch (error: any) {
+      console.error('Error regenerating thumbnail:', error);
+
+      if (error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('Access denied')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('Cannot regenerate thumbnail')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const captureController = new CaptureController();

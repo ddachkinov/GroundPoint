@@ -7,6 +7,8 @@ import {
   CompleteUploadInput,
   ListCapturesQuery,
 } from '../validators/capture.validator';
+import { enqueueThumbnailGeneration } from '../queues/thumbnail.queue';
+import { s3Paths } from '../config/s3.config';
 
 /**
  * Capture list response
@@ -172,7 +174,24 @@ class CaptureService {
       },
     });
 
-    // TODO: Enqueue thumbnail generation job (TASK_05)
+    // Enqueue thumbnail generation job
+    const extension = input.s3_key.includes('.') ? `.${input.s3_key.split('.').pop()}` : '.jpg';
+    const thumbnailS3Key = s3Paths.thumbnailPath(
+      operatorOrgId,
+      capture.site.project.id,
+      capture.siteId,
+      input.capture_id
+    );
+
+    await enqueueThumbnailGeneration({
+      captureId: input.capture_id,
+      s3Key: input.s3_key,
+      thumbnailS3Key,
+      operatorOrgId,
+      projectId: capture.site.project.id,
+      siteId: capture.siteId,
+    });
+
     // TODO: Update storage quota
 
     return updatedCapture;
@@ -430,6 +449,78 @@ class CaptureService {
     });
 
     return orphanedCaptures.length;
+  }
+
+  /**
+   * Regenerate thumbnail for a capture
+   */
+  async regenerateThumbnail(
+    captureId: string,
+    userId: string,
+    operatorOrgId: string
+  ): Promise<void> {
+    const capture = await prisma.capture.findUnique({
+      where: { id: captureId },
+      include: {
+        site: {
+          include: {
+            project: true,
+          },
+        },
+      },
+    });
+
+    if (!capture) {
+      throw new Error('Capture not found');
+    }
+
+    // Check authorization: Must be uploader or Operator Admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    const isAdmin = user?.role === 'OPERATOR_ADMIN';
+    const isUploader = capture.uploadedByUserId === userId;
+
+    if (!isAdmin && !isUploader) {
+      throw new Error('Access denied');
+    }
+
+    if (capture.site.project.operatorOrgId !== operatorOrgId) {
+      throw new Error('Access denied');
+    }
+
+    // Verify file exists
+    if (!capture.filePath) {
+      throw new Error('Cannot regenerate thumbnail: Original file not found');
+    }
+
+    // Reset processing status
+    await prisma.capture.update({
+      where: { id: captureId },
+      data: {
+        processingStatus: ProcessingStatus.PROCESSING,
+        errorMessage: null,
+      },
+    });
+
+    // Generate thumbnail S3 key
+    const thumbnailS3Key = s3Paths.thumbnailPath(
+      operatorOrgId,
+      capture.site.project.id,
+      capture.siteId,
+      captureId
+    );
+
+    // Enqueue thumbnail generation job
+    await enqueueThumbnailGeneration({
+      captureId,
+      s3Key: capture.filePath,
+      thumbnailS3Key,
+      operatorOrgId,
+      projectId: capture.site.project.id,
+      siteId: capture.siteId,
+    });
   }
 }
 
