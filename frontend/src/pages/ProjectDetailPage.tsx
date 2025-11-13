@@ -5,6 +5,7 @@ import { useProjectsStore } from '../store/projectsStore';
 import { CreateSiteModal } from '../components/projects/CreateSiteModal';
 import { EditProjectModal } from '../components/projects/EditProjectModal';
 import { EditSiteModal } from '../components/projects/EditSiteModal';
+import { UploadCaptureModal } from '../components/captures/UploadCaptureModal';
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,8 @@ export function ProjectDetailPage() {
   const [isCreateSiteModalOpen, setIsCreateSiteModalOpen] = useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
+  const [uploadSiteId, setUploadSiteId] = useState<string | null>(null);
+  const [uploadSiteName, setUploadSiteName] = useState<string>('');
 
   useEffect(() => {
     if (id) {
@@ -283,6 +286,15 @@ export function ProjectDetailPage() {
                           {new Date(site.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => {
+                              setUploadSiteId(site.id);
+                              setUploadSiteName(site.name);
+                            }}
+                            className="text-green-600 hover:text-green-900 mr-4"
+                          >
+                            Upload
+                          </button>
                           {isOperator && (
                             <>
                               <button
@@ -328,6 +340,17 @@ export function ProjectDetailPage() {
               siteId={editingSiteId}
               isOpen={true}
               onClose={() => setEditingSiteId(null)}
+            />
+          )}
+          {uploadSiteId && (
+            <UploadCaptureModal
+              siteId={uploadSiteId}
+              siteName={uploadSiteName}
+              isOpen={true}
+              onClose={() => {
+                setUploadSiteId(null);
+                setUploadSiteName('');
+              }}
             />
           )}
         </>
