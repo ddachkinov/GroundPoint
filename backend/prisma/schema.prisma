@@ -1,0 +1,415 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OPERATOR_ADMIN
+  OPERATOR_MEMBER
+  SITE_OWNER
+  VIEWER
+  SUPPORT
+  SUPERADMIN
+}
+
+enum OrganizationType {
+  OPERATOR
+  SITE_OWNER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum CaptureType {
+  IMAGE
+  VIDEO
+  PHOTOGRAMMETRY
+}
+
+enum ProcessingStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum WeatherCondition {
+  SUNNY
+  CLOUDY
+  RAINY
+  SNOWY
+}
+
+enum SubscriptionTier {
+  FREE
+  PROFESSIONAL
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIALING
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CARD
+  SEPA
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  IN_TRANSIT
+  PAID
+  FAILED
+}
+
+enum FeeType {
+  PLATFORM_PERCENTAGE
+  PLATFORM_FIXED
+  STRIPE_PROCESSING
+}
+
+enum NotificationType {
+  INVOICE_SENT
+  PAYMENT_CONFIRMATION
+  OVERDUE_REMINDER
+  PAYOUT_CONFIRMATION
+  PAYOUT_FAILED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+model User {
+  id                String            @id @default(uuid())
+  email             String            @unique
+  passwordHash      String            @map("password_hash")
+  firstName         String            @map("first_name")
+  lastName          String            @map("last_name")
+  role              UserRole
+  organizationId    String            @map("organization_id")
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  mfaEnabled        Boolean           @default(false) @map("mfa_enabled")
+  mfaSecret         String?           @map("mfa_secret")
+  emailVerified     Boolean           @default(false) @map("email_verified")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  captures          Capture[]         @relation("UploadedBy")
+  projectMembers    ProjectMember[]
+  sentInvitations   Invitation[]      @relation("InvitedBy")
+  receivedNotifications Notification[]
+
+  @@map("users")
+}
+
+model Organization {
+  id                        String                  @id @default(uuid())
+  name                      String
+  type                      OrganizationType
+  countryCode               String?                 @map("country_code")
+  vatId                     String?                 @map("vat_id")
+  stripeCustomerId          String?                 @unique @map("stripe_customer_id")
+  stripeConnectedAccountId  String?                 @unique @map("stripe_connected_account_id")
+  createdAt                 DateTime                @default(now()) @map("created_at")
+  updatedAt                 DateTime                @updatedAt @map("updated_at")
+  users                     User[]
+  operatorProjects          Project[]               @relation("OperatorProjects")
+  siteOwnerProjects         Project[]               @relation("SiteOwnerProjects")
+  subscription              OperatorSubscription?
+  operatorInvoices          Invoice[]               @relation("OperatorInvoices")
+  siteOwnerInvoices         Invoice[]               @relation("SiteOwnerInvoices")
+  payouts                   Payout[]
+
+  @@map("organizations")
+}
+
+model OperatorSubscription {
+  id                String             @id @default(uuid())
+  organizationId    String             @unique @map("organization_id")
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  tier              SubscriptionTier
+  status            SubscriptionStatus
+  stripeSubscriptionId String?         @unique @map("stripe_subscription_id")
+  currentPeriodStart DateTime          @map("current_period_start")
+  currentPeriodEnd   DateTime          @map("current_period_end")
+  cancelAtPeriodEnd  Boolean           @default(false) @map("cancel_at_period_end")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@map("operator_subscriptions")
+}
+
+model Project {
+  id                String        @id @default(uuid())
+  name              String
+  description       String?
+  operatorOrgId     String        @map("operator_org_id")
+  operatorOrg       Organization  @relation("OperatorProjects", fields: [operatorOrgId], references: [id])
+  siteOwnerOrgId    String        @map("site_owner_org_id")
+  siteOwnerOrg      Organization  @relation("SiteOwnerProjects", fields: [siteOwnerOrgId], references: [id])
+  status            ProjectStatus @default(ACTIVE)
+  retentionDays     Int           @default(30) @map("retention_days")
+  thumbnailCaptureId String?      @map("thumbnail_capture_id")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  sites             Site[]
+  members           ProjectMember[]
+  invitations       Invitation[]
+  invoices          Invoice[]
+
+  @@index([operatorOrgId, status])
+  @@index([siteOwnerOrgId])
+  @@map("projects")
+}
+
+model Site {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  address     String?
+  latitude    Decimal?  @db.Decimal(10, 8)
+  longitude   Decimal?  @db.Decimal(11, 8)
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  angles      Angle[]
+  captures    Capture[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@map("sites")
+}
+
+model Angle {
+  id                 String    @id @default(uuid())
+  siteId             String    @map("site_id")
+  site               Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name               String
+  description        String?
+  referenceCaptureId String?   @map("reference_capture_id")
+  sortOrder          Int       @default(0) @map("sort_order")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  captures           Capture[]
+
+  @@unique([siteId, name])
+  @@index([siteId])
+  @@map("angles")
+}
+
+model Capture {
+  id                String           @id @default(uuid())
+  siteId            String           @map("site_id")
+  site              Site             @relation(fields: [siteId], references: [id])
+  angleId           String           @map("angle_id")
+  angle             Angle            @relation(fields: [angleId], references: [id])
+  uploadedByUserId  String           @map("uploaded_by_user_id")
+  uploadedBy        User             @relation("UploadedBy", fields: [uploadedByUserId], references: [id])
+  captureDate       DateTime         @map("capture_date") @db.Date
+  filePath          String           @map("file_path")
+  thumbnailPath     String?          @map("thumbnail_path")
+  fileSize          BigInt           @map("file_size")
+  imageWidth        Int?             @map("image_width")
+  imageHeight       Int?             @map("image_height")
+  latitude          Decimal?         @db.Decimal(10, 8)
+  longitude         Decimal?         @db.Decimal(11, 8)
+  weather           WeatherCondition?
+  notes             String?
+  fileType          CaptureType      @map("file_type")
+  processingStatus  ProcessingStatus @default(UPLOADED) @map("processing_status")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  @@index([siteId, captureDate])
+  @@index([angleId, captureDate])
+  @@map("captures")
+}
+
+model ProjectMember {
+  id            String   @id @default(uuid())
+  projectId     String   @map("project_id")
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  role          UserRole
+  invitedAt     DateTime @default(now()) @map("invited_at")
+  acceptedAt    DateTime? @map("accepted_at")
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  email       String
+  role        UserRole
+  token       String    @unique
+  invitedBy   String    @map("invited_by")
+  inviter     User      @relation("InvitedBy", fields: [invitedBy], references: [id])
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([email])
+  @@map("invitations")
+}
+
+model Invoice {
+  id                  String        @id @default(uuid())
+  invoiceNumber       String        @unique @map("invoice_number")
+  operatorOrgId       String        @map("operator_org_id")
+  operatorOrg         Organization  @relation("OperatorInvoices", fields: [operatorOrgId], references: [id])
+  siteOwnerOrgId      String        @map("site_owner_org_id")
+  siteOwnerOrg        Organization  @relation("SiteOwnerInvoices", fields: [siteOwnerOrgId], references: [id])
+  projectId           String?       @map("project_id")
+  project             Project?      @relation(fields: [projectId], references: [id])
+  status              InvoiceStatus @default(DRAFT)
+  issueDate           DateTime      @map("issue_date") @db.Date
+  dueDate             DateTime      @map("due_date") @db.Date
+  subtotal            Decimal       @db.Decimal(12, 2)
+  taxRate             Decimal       @db.Decimal(5, 2) @map("tax_rate")
+  taxAmount           Decimal       @db.Decimal(12, 2) @map("tax_amount")
+  totalAmount         Decimal       @db.Decimal(12, 2) @map("total_amount")
+  currency            String        @default("USD")
+  notes               String?
+  paymentTerms        String?       @map("payment_terms")
+  stripePaymentIntentId String?     @map("stripe_payment_intent_id")
+  paidAt              DateTime?     @map("paid_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  lineItems           InvoiceLineItem[]
+  payments            Payment[]
+
+  @@index([operatorOrgId, status])
+  @@index([siteOwnerOrgId, status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id          String   @id @default(uuid())
+  invoiceId   String   @map("invoice_id")
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(12, 2) @map("unit_price")
+  amount      Decimal  @db.Decimal(12, 2)
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model Payment {
+  id                      String        @id @default(uuid())
+  invoiceId               String        @map("invoice_id")
+  invoice                 Invoice       @relation(fields: [invoiceId], references: [id])
+  siteOwnerUserId         String        @map("site_owner_user_id")
+  amount                  Decimal       @db.Decimal(12, 2)
+  currency                String
+  paymentMethod           PaymentMethod @map("payment_method")
+  stripePaymentIntentId   String        @map("stripe_payment_intent_id")
+  stripeChargeId          String?       @map("stripe_charge_id")
+  status                  PaymentStatus @default(PENDING)
+  paidAt                  DateTime?     @map("paid_at")
+  failureReason           String?       @map("failure_reason")
+  createdAt               DateTime      @default(now()) @map("created_at")
+  updatedAt               DateTime      @updatedAt @map("updated_at")
+  fees                    Fee[]
+  payouts                 Payout[]
+
+  @@index([invoiceId])
+  @@index([stripePaymentIntentId])
+  @@map("payments")
+}
+
+model Fee {
+  id          String   @id @default(uuid())
+  paymentId   String   @map("payment_id")
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+  feeType     FeeType  @map("fee_type")
+  amount      Decimal  @db.Decimal(12, 2)
+  currency    String
+  calculatedAt DateTime @default(now()) @map("calculated_at")
+
+  @@index([paymentId])
+  @@map("fees")
+}
+
+model Payout {
+  id                       String       @id @default(uuid())
+  operatorOrgId            String       @map("operator_org_id")
+  operatorOrg              Organization @relation(fields: [operatorOrgId], references: [id])
+  paymentId                String       @map("payment_id")
+  payment                  Payment      @relation(fields: [paymentId], references: [id])
+  grossAmount              Decimal      @db.Decimal(12, 2) @map("gross_amount")
+  feeAmount                Decimal      @db.Decimal(12, 2) @map("fee_amount")
+  netAmount                Decimal      @db.Decimal(12, 2) @map("net_amount")
+  currency                 String
+  stripeTransferId         String?      @map("stripe_transfer_id")
+  stripeConnectedAccountId String       @map("stripe_connected_account_id")
+  status                   PayoutStatus @default(PENDING)
+  scheduledAt              DateTime     @map("scheduled_at")
+  paidAt                   DateTime?    @map("paid_at")
+  failureReason            String?      @map("failure_reason")
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+
+  @@index([operatorOrgId, status])
+  @@index([paymentId])
+  @@map("payouts")
+}
+
+model Notification {
+  id            String              @id @default(uuid())
+  recipientUserId String            @map("recipient_user_id")
+  recipient     User                @relation(fields: [recipientUserId], references: [id])
+  type          NotificationType
+  subject       String
+  body          String              @db.Text
+  sentAt        DateTime?           @map("sent_at")
+  status        NotificationStatus  @default(PENDING)
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  @@index([recipientUserId])
+  @@map("notifications")
+}
