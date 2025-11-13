@@ -7,6 +7,8 @@ import {
   CompleteUploadInput,
   ListCapturesQuery,
   CreateAngleInput,
+  CalendarQuery,
+  CalendarDate,
 } from '../api/captures';
 import { getErrorMessage } from '../api/client';
 
@@ -32,6 +34,14 @@ interface CapturesState {
   limit: number;
   offset: number;
 
+  // Calendar data
+  calendarDates: CalendarDate[];
+  calendarMonth: string;
+  isLoadingCalendar: boolean;
+
+  // Selected captures (for comparison)
+  selectedCaptureIds: string[];
+
   // Angles data
   angles: Angle[];
 
@@ -48,6 +58,14 @@ interface CapturesState {
   getCapture: (captureId: string) => Promise<void>;
   deleteCapture: (captureId: string) => Promise<void>;
   refreshCaptures: () => Promise<void>;
+
+  // Actions - Calendar
+  getCalendarData: (query?: CalendarQuery) => Promise<void>;
+
+  // Actions - Selection
+  toggleCaptureSelection: (captureId: string) => void;
+  clearSelection: () => void;
+  isSelected: (captureId: string) => boolean;
 
   // Actions - Upload
   uploadFile: (
@@ -78,6 +96,10 @@ export const useCapturesStore = create<CapturesState>((set, get) => ({
   total: 0,
   limit: 50,
   offset: 0,
+  calendarDates: [],
+  calendarMonth: '',
+  isLoadingCalendar: false,
+  selectedCaptureIds: [],
   angles: [],
   uploadProgress: {},
   isLoading: false,
@@ -335,6 +357,55 @@ export const useCapturesStore = create<CapturesState>((set, get) => ({
       set({ error: getErrorMessage(error) });
       throw error;
     }
+  },
+
+  /**
+   * Get calendar data (dates with capture counts)
+   */
+  getCalendarData: async (query?: CalendarQuery) => {
+    set({ isLoadingCalendar: true, error: null });
+    try {
+      const response = await capturesAPI.getCalendarData(query);
+      set({
+        calendarDates: response.dates,
+        calendarMonth: response.month,
+        isLoadingCalendar: false,
+        error: null,
+      });
+    } catch (error) {
+      set({
+        calendarDates: [],
+        isLoadingCalendar: false,
+        error: getErrorMessage(error),
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Toggle capture selection
+   */
+  toggleCaptureSelection: (captureId: string) => {
+    set((state) => {
+      const isCurrentlySelected = state.selectedCaptureIds.includes(captureId);
+      const newSelectedIds = isCurrentlySelected
+        ? state.selectedCaptureIds.filter((id) => id !== captureId)
+        : [...state.selectedCaptureIds, captureId];
+
+      return { selectedCaptureIds: newSelectedIds };
+    });
+  },
+
+  /**
+   * Clear selection
+   */
+  clearSelection: () => set({ selectedCaptureIds: [] }),
+
+  /**
+   * Check if capture is selected
+   */
+  isSelected: (captureId: string) => {
+    return get().selectedCaptureIds.includes(captureId);
   },
 
   /**
