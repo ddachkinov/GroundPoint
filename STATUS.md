@@ -7,10 +7,9 @@
 
 ## Current Milestone
 
-**Milestone 3: Projects & Sites CRUD**
-- Status: 🚧 In Progress
-- Started: 2025-11-13
-- Target: Core domain model implementation
+**Milestone 4: Image Upload Infrastructure**
+- Status: 🚧 Ready to Start
+- Target: Enable image uploads with S3 storage and processing
 
 ---
 
@@ -21,40 +20,37 @@
 - Completed: 2025-11-13
 - Commit: `88f36eb`
 
-### ✅ Milestone 2: Authentication System  
+### ✅ Milestone 2: Authentication System
 - Status: Complete
 - Completed: 2025-11-13
 - Commits: `cb98f3f`, `e8f815c`, `83057bd`
 - Deliverables: Full-stack JWT auth with 8 API endpoints, complete UI
 
+### ✅ Milestone 3: Projects & Sites CRUD
+- Status: Complete
+- Completed: 2025-11-13
+- Commits: `a8571fe`, `48d3706`, `c65b521`
+- Deliverables: Full-stack CRUD with 9 API endpoints, complete UI
+- Backend: 7 files (~1,310 lines)
+- Frontend: 9 files (~2,230 lines)
+
 ---
 
-## Current Work (Milestone 3)
+## Current Work (Milestone 4)
 
-### Projects & Sites CRUD Implementation
+### Image Upload Infrastructure
 
-**Reference**: TASK_02_Projects_Sites_CRUD.md
+**Status**: Ready to Start
 
 **Objectives**:
-- Create, read, update, delete Projects
-- Create, read, update, delete Sites
-- Pagination and filtering
-- Organization-scoped authorization
-- Validation and quota enforcement
-
-**Backend** (In Progress):
-- Projects validators (Zod schemas)
-- Projects service (business logic)
-- Sites service (business logic)
-- Projects controller
-- Sites controller
-- Routes integration
-
-**Frontend** (Pending):
-- Projects API client
-- Projects store (Zustand)
-- Projects list and detail pages
-- Sites management UI
+- S3/MinIO integration for image storage
+- Pre-signed URL generation for secure uploads
+- Image processing pipeline with Sharp
+- Thumbnail generation (multiple sizes)
+- Background job processing with BullMQ
+- Capture model with image metadata
+- Upload progress tracking
+- Image validation (type, size, dimensions)
 
 ---
 

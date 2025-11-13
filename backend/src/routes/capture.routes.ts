@@ -1,0 +1,52 @@
+import { Router } from 'express';
+import { captureController } from '../controllers/capture.controller';
+import { authMiddleware } from '../middleware/auth.middleware';
+import { requireOperator } from '../middleware/rbac.middleware';
+
+const router = Router();
+
+/**
+ * All capture routes require authentication
+ */
+router.use(authMiddleware);
+
+/**
+ * Request pre-signed upload URL
+ * POST /api/v1/captures/upload-url
+ * Requires: Operator role
+ */
+router.post('/upload-url', requireOperator, (req, res) =>
+  captureController.requestUploadUrl(req, res)
+);
+
+/**
+ * Complete upload
+ * POST /api/v1/captures/complete
+ * Requires: Operator role
+ */
+router.post('/complete', requireOperator, (req, res) =>
+  captureController.completeUpload(req, res)
+);
+
+/**
+ * List captures
+ * GET /api/v1/captures
+ * Accessible by: All authenticated users
+ */
+router.get('/', (req, res) => captureController.listCaptures(req, res));
+
+/**
+ * Get capture by ID
+ * GET /api/v1/captures/:id
+ * Accessible by: All authenticated users
+ */
+router.get('/:id', (req, res) => captureController.getCapture(req, res));
+
+/**
+ * Delete capture
+ * DELETE /api/v1/captures/:id
+ * Requires: Operator Admin or uploader
+ */
+router.delete('/:id', (req, res) => captureController.deleteCapture(req, res));
+
+export default router;
