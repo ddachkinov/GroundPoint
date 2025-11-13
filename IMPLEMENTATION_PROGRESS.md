@@ -284,3 +284,93 @@ None yet
 - Following project plan in PLAN.md
 - Following build guide in STATE.md
 - Task breakdown available in TASKS/ directory
+
+### Milestone 3: Projects & Sites CRUD (Backend Complete)
+
+**Started**: 2025-11-13
+**Backend Completed**: 2025-11-13
+**Status**: Backend ✅ Complete, Frontend Pending
+
+**Summary**:
+Successfully implemented complete backend CRUD API for Projects and Sites management. Operators can create, read, update, and delete projects and sites with proper authorization, validation, and organization scoping. All 9 REST API endpoints are production-ready with comprehensive error handling, input validation, and security checks.
+
+**Completed Tasks**:
+- ✅ Implemented Zod validation schemas for Projects and Sites
+- ✅ Implemented Projects service with full business logic
+- ✅ Implemented Sites service with full business logic  
+- ✅ Implemented Projects controller with all endpoint handlers
+- ✅ Implemented Sites controller with all endpoint handlers
+- ✅ Implemented routes for Projects and Sites
+- ✅ Registered routes in main router
+- ✅ Added organization-scoped authorization
+- ✅ Implemented pagination and filtering for project lists
+- ✅ Added duplicate name validation (unique within organization/project)
+- ✅ Implemented soft delete (archive) for projects
+- ✅ Implemented GPS coordinate validation
+
+**Files Created**: 7 new backend files
+
+Backend:
+- `backend/src/validators/project.validator.ts` (125 lines) - Zod schemas
+- `backend/src/services/project.service.ts` (310 lines) - Projects business logic
+- `backend/src/services/site.service.ts` (180 lines) - Sites business logic
+- `backend/src/controllers/project.controller.ts` (395 lines) - Projects endpoints
+- `backend/src/controllers/site.controller.ts` (210 lines) - Sites endpoints
+- `backend/src/routes/project.routes.ts` (55 lines) - Projects routes
+- `backend/src/routes/site.routes.ts` (35 lines) - Sites routes
+
+**Key Files Modified**: 1 file
+- `backend/src/routes/index.ts` - Registered project and site routes
+
+**API Endpoints Implemented**:
+- POST /api/v1/projects - Create project
+- GET /api/v1/projects - List projects (pagination, filtering, search)
+- GET /api/v1/projects/:id - Get project details with sites
+- PATCH /api/v1/projects/:id - Update project
+- DELETE /api/v1/projects/:id - Archive project (soft delete)
+- POST /api/v1/projects/:id/sites - Create site in project
+- GET /api/v1/sites/:id - Get site details
+- PATCH /api/v1/sites/:id - Update site
+- DELETE /api/v1/sites/:id - Delete site (with capture check)
+
+**Validation Rules**:
+- Project names unique within operator organization
+- Site names unique within project
+- GPS coordinates: latitude -90 to 90, longitude -180 to 180
+- Description limits: projects 2000 chars, sites 1000 chars
+- Retention days: 1 to 3650 days
+- Site owner organization must be of type SITE_OWNER
+
+**Authorization**:
+- All endpoints require authentication
+- Projects scoped to operator organization
+- Site Owners can view projects (read-only)
+- Only Operators can create/update/delete
+- Cross-organization access denied
+- Sites inherit project authorization
+
+**Features**:
+- Pagination (limit/offset)
+- Status filtering (Active, Paused, Completed, Archived)
+- Search by project name (case-insensitive)
+- Soft delete for projects (set status to ARCHIVED)
+- Hard delete for sites (only if no captures)
+- Automatic site count aggregation
+- Project access checks for authorization
+
+**Pending Tasks**:
+- Frontend implementation (API client, store, UI)
+- Capture count aggregation (TODO in services)
+- Thumbnail URL generation (TODO in services)
+- Site quota enforcement by subscription tier
+- Unit and integration tests
+
+**Blockers**: None
+
+**Duration**: 1 day (backend only)
+
+---
+
+### Milestone 4: Image Upload Infrastructure (Pending)
+
+**Status**: Not Started
