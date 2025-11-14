@@ -8,6 +8,8 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import TimelinePage from './pages/TimelinePage';
 import ComparisonPage from './pages/ComparisonPage';
+import { PricingPage } from './pages/PricingPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -57,6 +59,22 @@ function App() {
         element={
           <ProtectedRoute>
             <ComparisonPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pricing"
+        element={
+          <ProtectedRoute>
+            <PricingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/subscription"
+        element={
+          <ProtectedRoute>
+            <SubscriptionPage />
           </ProtectedRoute>
         }
       />

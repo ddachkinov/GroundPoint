@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { env } from './config/env';
 import routes from './routes';
+import { subscriptionController } from './controllers/subscription.controller';
 
 const app = express();
 
@@ -15,6 +16,15 @@ app.use(cors({
   credentials: true,
 }));
 app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
+
+// Stripe webhook requires raw body for signature verification
+// Must be registered BEFORE express.json() middleware
+app.post(
+  '/api/v1/webhooks/stripe',
+  express.raw({ type: 'application/json' }),
+  (req, res) => subscriptionController.handleWebhook(req, res)
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
