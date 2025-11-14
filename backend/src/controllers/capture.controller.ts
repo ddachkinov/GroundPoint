@@ -383,6 +383,81 @@ class CaptureController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  /**
+   * Get captures for comparison
+   * GET /api/v1/captures/compare
+   */
+  async getComparison(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { ids } = req.query;
+
+      if (!ids || typeof ids !== 'string') {
+        res.status(400).json({ error: 'Capture IDs required (comma-separated)' });
+        return;
+      }
+
+      // Parse comma-separated IDs
+      const captureIds = ids.split(',').map((id) => id.trim());
+
+      // Get comparison captures
+      const captures = await captureService.getComparison(captureIds, user.organizationId);
+
+      res.status(200).json({
+        captures: captures.map((capture) => ({
+          capture_id: capture.id,
+          site_id: capture.siteId,
+          site_name: capture.siteName,
+          angle_id: capture.angleId,
+          angle_name: capture.angleName,
+          capture_date: capture.captureDate,
+          file_url: capture.fileUrl,
+          thumbnail_url: capture.thumbnailUrl,
+          file_size: capture.fileSize.toString(),
+          image_width: capture.imageWidth,
+          image_height: capture.imageHeight,
+          latitude: capture.latitude?.toString(),
+          longitude: capture.longitude?.toString(),
+          weather: capture.weather,
+          notes: capture.notes,
+          uploaded_by_user_id: capture.uploadedByUserId,
+          uploaded_by_user_name: capture.uploadedByName,
+          processing_status: capture.processingStatus,
+          created_at: capture.createdAt,
+        })),
+      });
+    } catch (error: any) {
+      console.error('Error getting comparison:', error);
+
+      if (error.message.includes('2 to 4 captures')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('Access denied') || error.message.includes('do not have access')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('same angle') || error.message.includes('same project')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const captureController = new CaptureController();

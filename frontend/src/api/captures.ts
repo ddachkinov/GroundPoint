@@ -244,4 +244,14 @@ export const capturesAPI = {
     );
     return response.data;
   },
+
+  /**
+   * Get captures for comparison
+   */
+  getComparison: async (captureIds: string[]): Promise<{ captures: Capture[] }> => {
+    const response = await apiClient.get<{ captures: Capture[] }>('/captures/compare', {
+      params: { ids: captureIds.join(',') },
+    });
+    return response.data;
+  },
 };

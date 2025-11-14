@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import TimelinePage from './pages/TimelinePage';
+import ComparisonPage from './pages/ComparisonPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -48,6 +49,14 @@ function App() {
         element={
           <ProtectedRoute>
             <TimelinePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/compare"
+        element={
+          <ProtectedRoute>
+            <ComparisonPage />
           </ProtectedRoute>
         }
       />

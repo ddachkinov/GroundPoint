@@ -182,6 +182,13 @@ export default function TimelinePage() {
     setSelectedDate(null);
   };
 
+  // Handle compare button click
+  const handleCompare = () => {
+    if (selectedCaptureIds.length >= 2 && selectedCaptureIds.length <= 4) {
+      navigate(`/compare?ids=${selectedCaptureIds.join(',')}`);
+    }
+  };
+
   // Get available angles for selected site
   const { angles, listAngles } = useCapturesStore();
   useEffect(() => {
@@ -227,7 +234,9 @@ export default function TimelinePage() {
           <div className="selected-indicator">
             <span>{selectedCaptureIds.length} selected</span>
             {selectedCaptureIds.length >= 2 && selectedCaptureIds.length <= 4 && (
-              <button className="compare-button">Compare</button>
+              <button className="compare-button" onClick={handleCompare}>
+                Compare
+              </button>
             )}
             <button className="clear-selection-button" onClick={clearSelection}>
               Clear

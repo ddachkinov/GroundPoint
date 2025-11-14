@@ -607,6 +607,116 @@ class CaptureService {
       siteId: capture.siteId,
     });
   }
+
+  /**
+   * Get captures for comparison
+   */
+  async getComparison(
+    captureIds: string[],
+    operatorOrgId: string
+  ): Promise<
+    Array<
+      Capture & {
+        siteName: string;
+        angleName: string;
+        uploadedByName: string;
+        fileUrl?: string;
+        thumbnailUrl?: string;
+      }
+    >
+  > {
+    // Validate number of captures
+    if (captureIds.length < 2 || captureIds.length > 4) {
+      throw new Error('Please select 2 to 4 captures for comparison');
+    }
+
+    // Get all captures
+    const captures = await prisma.capture.findMany({
+      where: {
+        id: {
+          in: captureIds,
+        },
+      },
+      include: {
+        site: {
+          select: {
+            name: true,
+            project: {
+              select: {
+                id: true,
+                operatorOrgId: true,
+              },
+            },
+          },
+        },
+        angle: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        uploadedBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: {
+        captureDate: 'asc',
+      },
+    });
+
+    // Check if all captures were found
+    if (captures.length !== captureIds.length) {
+      throw new Error('One or more captures not found');
+    }
+
+    // Check authorization: All captures must belong to user's organization
+    const hasAccess = captures.every((c) => c.site.project.operatorOrgId === operatorOrgId);
+    if (!hasAccess) {
+      throw new Error('You do not have access to one or more selected captures');
+    }
+
+    // Check that all captures are from the same angle
+    const angleIds = new Set(captures.map((c) => c.angleId));
+    if (angleIds.size > 1) {
+      throw new Error('All captures must be from the same angle');
+    }
+
+    // Check that all captures are from the same project
+    const projectIds = new Set(captures.map((c) => c.site.project.id));
+    if (projectIds.size > 1) {
+      throw new Error('All captures must be from the same project');
+    }
+
+    // Generate pre-signed URLs for files and thumbnails
+    const result = await Promise.all(
+      captures.map(async (capture) => {
+        let fileUrl: string | undefined;
+        let thumbnailUrl: string | undefined;
+
+        if (capture.filePath && capture.processingStatus !== ProcessingStatus.UPLOADED) {
+          fileUrl = await storageService.generateDownloadUrl(capture.filePath);
+        }
+
+        if (capture.thumbnailPath) {
+          thumbnailUrl = await storageService.generateDownloadUrl(capture.thumbnailPath);
+        }
+
+        return {
+          ...capture,
+          siteName: capture.site.name,
+          angleName: capture.angle.name,
+          uploadedByName: `${capture.uploadedBy.firstName} ${capture.uploadedBy.lastName}`,
+          fileUrl,
+          thumbnailUrl,
+        };
+      })
+    );
+
+    return result;
+  }
 }
 
 export const captureService = new CaptureService();

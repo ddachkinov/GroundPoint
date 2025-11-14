@@ -36,6 +36,13 @@ router.post('/complete', requireOperator, (req, res) =>
 router.get('/calendar', (req, res) => captureController.getCalendarData(req, res));
 
 /**
+ * Get captures for comparison
+ * GET /api/v1/captures/compare
+ * Accessible by: All authenticated users
+ */
+router.get('/compare', (req, res) => captureController.getComparison(req, res));
+
+/**
  * List captures
  * GET /api/v1/captures
  * Accessible by: All authenticated users
