@@ -3,6 +3,7 @@ import { stripeClient } from '../config/stripe.config';
 import Stripe from 'stripe';
 import { payoutService } from './payout.service';
 import { notificationService } from './notification.service';
+import { feeService } from './fee.service';
 import { env } from '../config/env';
 
 const prisma = new PrismaClient();
@@ -190,6 +191,18 @@ export class PaymentService {
     });
 
     console.log(`Payment succeeded for invoice ${invoice.invoiceNumber}`);
+
+    // Create fee records for this payment
+    try {
+      await feeService.createFeeRecords(
+        payment.id,
+        Number(payment.amount),
+        payment.currency
+      );
+    } catch (error) {
+      console.error('Error creating fee records:', error);
+      // Don't fail payment if fee record creation fails
+    }
 
     // Create payout for operator
     let payoutId: string | undefined;

@@ -7,6 +7,7 @@ import subscriptionRoutes from './subscription.routes';
 import invoiceRoutes from './invoice.routes';
 import paymentRoutes from './payment.routes';
 import payoutRoutes from './payout.routes';
+import feeRoutes from './fee.routes';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/subscriptions', subscriptionRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/payouts', payoutRoutes);
+router.use('/fees', feeRoutes);
 
 export default router;
