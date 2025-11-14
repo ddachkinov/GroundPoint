@@ -10,6 +10,7 @@ import TimelinePage from './pages/TimelinePage';
 import ComparisonPage from './pages/ComparisonPage';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
+import { InvoicesPage } from './pages/InvoicesPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -75,6 +76,14 @@ function App() {
         element={
           <ProtectedRoute>
             <SubscriptionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/invoices"
+        element={
+          <ProtectedRoute>
+            <InvoicesPage />
           </ProtectedRoute>
         }
       />

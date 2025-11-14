@@ -4,6 +4,7 @@ import projectRoutes from './project.routes';
 import siteRoutes from './site.routes';
 import captureRoutes from './capture.routes';
 import subscriptionRoutes from './subscription.routes';
+import invoiceRoutes from './invoice.routes';
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use('/projects', projectRoutes);
 router.use('/sites', siteRoutes);
 router.use('/captures', captureRoutes);
 router.use('/subscriptions', subscriptionRoutes);
+router.use('/invoices', invoiceRoutes);
 
 export default router;
