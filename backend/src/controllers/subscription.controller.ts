@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { subscriptionService } from '../services/subscription.service';
 import { paymentService } from '../services/payment.service';
+import { payoutService } from '../services/payout.service';
 import { SubscriptionTier } from '@prisma/client';
 import Stripe from 'stripe';
 import { stripeClient } from '../config/stripe.config';
@@ -223,6 +224,18 @@ export class SubscriptionController {
             break;
           default:
             console.log(`Unhandled payment event type: ${event.type}`);
+        }
+      } else if (event.type.startsWith('transfer')) {
+        // Payout/transfer-related events
+        switch (event.type) {
+          case 'transfer.paid':
+            await payoutService.handleTransferPaid(event.data.object as Stripe.Transfer);
+            break;
+          case 'transfer.failed':
+            await payoutService.handleTransferFailed(event.data.object as Stripe.Transfer);
+            break;
+          default:
+            console.log(`Unhandled transfer event type: ${event.type}`);
         }
       } else {
         console.log(`Unhandled event type: ${event.type}`);

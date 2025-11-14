@@ -1,6 +1,7 @@
 import { PrismaClient, PaymentStatus, PaymentMethod, InvoiceStatus, Prisma } from '@prisma/client';
 import { stripeClient } from '../config/stripe.config';
 import Stripe from 'stripe';
+import { payoutService } from './payout.service';
 
 const prisma = new PrismaClient();
 
@@ -158,9 +159,9 @@ export class PaymentService {
     }
 
     // Create payment record and update invoice in a transaction
-    await prisma.$transaction(async (tx) => {
+    const payment = await prisma.$transaction(async (tx) => {
       // Create payment record
-      await tx.payment.create({
+      const newPayment = await tx.payment.create({
         data: {
           invoiceId: invoice.id,
           siteOwnerUserId: user.id,
@@ -182,11 +183,20 @@ export class PaymentService {
           paidAt: new Date(),
         },
       });
+
+      return newPayment;
     });
 
     console.log(`Payment succeeded for invoice ${invoice.invoiceNumber}`);
 
-    // TODO: Enqueue payout job (TASK_11)
+    // Create payout for operator
+    try {
+      await payoutService.createPayout(payment.id);
+    } catch (error) {
+      console.error('Error creating payout:', error);
+      // Don't fail payment if payout creation fails
+    }
+
     // TODO: Send payment confirmation emails (TASK_12)
   }
 
