@@ -43,6 +43,13 @@ router.get('/calendar', (req, res) => captureController.getCalendarData(req, res
 router.get('/compare', (req, res) => captureController.getComparison(req, res));
 
 /**
+ * Get captures for layered overlay (premium feature)
+ * GET /api/v1/captures/overlay
+ * Accessible by: Professional tier and above
+ */
+router.get('/overlay', (req, res) => captureController.getOverlay(req, res));
+
+/**
  * List captures
  * GET /api/v1/captures
  * Accessible by: All authenticated users

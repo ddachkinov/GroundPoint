@@ -717,6 +717,89 @@ class CaptureService {
 
     return result;
   }
+
+  /**
+   * Get captures for layered overlay with subscription tier check
+   */
+  async getOverlay(
+    captureIds: string[],
+    operatorOrgId: string
+  ): Promise<{ captures: any[]; subscription_tier: string; feature_enabled: boolean }> {
+    // Validate capture count
+    if (captureIds.length < 2 || captureIds.length > 4) {
+      throw new Error('Please select 2 to 4 captures for overlay');
+    }
+
+    // Get all captures
+    const captures = await prisma.capture.findMany({
+      where: {
+        id: {
+          in: captureIds,
+        },
+        site: {
+          project: {
+            operatorOrganizationId: operatorOrgId,
+          },
+        },
+      },
+      include: {
+        site: {
+          include: {
+            project: true,
+          },
+        },
+        angle: true,
+      },
+      orderBy: {
+        captureDate: 'asc',
+      },
+    });
+
+    // Check all captures found
+    if (captures.length !== captureIds.length) {
+      throw new Error('One or more captures not found or not accessible');
+    }
+
+    // Check same angle
+    const angleIds = new Set(captures.map((c) => c.angleId));
+    if (angleIds.size > 1) {
+      throw new Error('All captures must be from the same angle for overlay');
+    }
+
+    // Check subscription tier
+    const subscription = await prisma.operatorSubscription.findUnique({
+      where: { organizationId: operatorOrgId },
+    });
+
+    const tier = subscription?.tier || 'FREE';
+    const featureEnabled =
+      tier === 'PROFESSIONAL' || tier === 'BUSINESS' || tier === 'ENTERPRISE';
+
+    // Generate pre-signed URLs for captures
+    const result = await Promise.all(
+      captures.map(async (capture) => {
+        let fileUrl: string | null = null;
+
+        if (capture.filePath) {
+          fileUrl = await storageService.generateDownloadUrl(capture.filePath);
+        }
+
+        return {
+          capture_id: capture.id,
+          capture_date: capture.captureDate.toISOString().split('T')[0],
+          file_url: fileUrl,
+          image_width: capture.imageWidth || 4000,
+          image_height: capture.imageHeight || 3000,
+        };
+      })
+    );
+
+    return {
+      captures: result,
+      subscription_tier: tier,
+      feature_enabled: featureEnabled,
+    };
+  }
 }
 
 export const captureService = new CaptureService();

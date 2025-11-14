@@ -458,6 +458,53 @@ class CaptureController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  /**
+   * GET /api/v1/captures/overlay
+   * Get captures for layered overlay (premium feature)
+   */
+  async getOverlay(req: Request, res: Response): Promise<void> {
+    try {
+      const operatorOrgId = req.user?.operatorOrganizationId;
+
+      if (!operatorOrgId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
+      const idsParam = req.query.ids as string;
+
+      if (!idsParam) {
+        res.status(400).json({ error: 'Missing ids parameter' });
+        return;
+      }
+
+      const captureIds = idsParam.split(',');
+
+      const result = await captureService.getOverlay(captureIds, operatorOrgId);
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error getting overlay:', error);
+
+      if (error.message.includes('select 2 to 4')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('not found') || error.message.includes('not accessible')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message.includes('same angle')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const captureController = new CaptureController();
