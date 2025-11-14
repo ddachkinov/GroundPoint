@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { subscriptionService } from '../services/subscription.service';
+import { paymentService } from '../services/payment.service';
 import { SubscriptionTier } from '@prisma/client';
 import Stripe from 'stripe';
 import { stripeClient } from '../config/stripe.config';
@@ -204,8 +205,28 @@ export class SubscriptionController {
         return;
       }
 
-      // Handle the event
-      await subscriptionService.handleWebhookEvent(event);
+      // Handle the event based on type
+      if (event.type.startsWith('customer.subscription') || event.type.startsWith('checkout.session')) {
+        // Subscription-related events
+        await subscriptionService.handleWebhookEvent(event);
+      } else if (event.type.startsWith('payment_intent') || event.type.startsWith('charge')) {
+        // Payment-related events
+        switch (event.type) {
+          case 'payment_intent.succeeded':
+            await paymentService.handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
+            break;
+          case 'payment_intent.payment_failed':
+            await paymentService.handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
+            break;
+          case 'charge.refunded':
+            await paymentService.handleChargeRefunded(event.data.object as Stripe.Charge);
+            break;
+          default:
+            console.log(`Unhandled payment event type: ${event.type}`);
+        }
+      } else {
+        console.log(`Unhandled event type: ${event.type}`);
+      }
 
       res.json({ received: true });
     } catch (error: any) {
