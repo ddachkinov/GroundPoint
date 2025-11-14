@@ -1,6 +1,8 @@
 import { PrismaClient, PayoutStatus, Prisma } from '@prisma/client';
 import { stripeClient } from '../config/stripe.config';
 import Stripe from 'stripe';
+import { notificationService } from './notification.service';
+import { env } from '../config/env';
 
 const prisma = new PrismaClient();
 
@@ -133,7 +135,7 @@ export class PayoutService {
   /**
    * Create payout record after successful payment
    */
-  async createPayout(paymentId: string): Promise<void> {
+  async createPayout(paymentId: string): Promise<{ payout_id: string }> {
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: {
@@ -160,14 +162,14 @@ export class PayoutService {
 
     if (existingPayout) {
       console.log('Payout already exists for payment', paymentId);
-      return;
+      return { payout_id: existingPayout.id };
     }
 
     const operatorOrg = payment.invoice.operatorOrg;
 
     if (!operatorOrg.stripeConnectedAccountId) {
       console.log('Operator has no connected account, skipping payout creation');
-      return;
+      throw new Error('Operator has no connected account');
     }
 
     // Calculate fees and net amount
@@ -181,7 +183,7 @@ export class PayoutService {
     scheduledAt.setHours(0, 0, 0, 0);
 
     // Create payout record
-    await prisma.payout.create({
+    const payout = await prisma.payout.create({
       data: {
         operatorOrgId: operatorOrg.id,
         paymentId: payment.id,
@@ -198,6 +200,8 @@ export class PayoutService {
     console.log(`Payout created for payment ${paymentId}, scheduled for ${scheduledAt}`);
 
     // TODO: Enqueue background job to process payout at scheduled time
+
+    return { payout_id: payout.id };
   }
 
   /**
@@ -293,17 +297,154 @@ export class PayoutService {
     }
 
     // Update payout status to PAID
-    await prisma.payout.update({
+    const updatedPayout = await prisma.payout.update({
       where: { id: payoutId },
       data: {
         status: PayoutStatus.PAID,
         paidAt: new Date(),
       },
+      include: {
+        operatorOrg: true,
+        payment: {
+          include: {
+            invoice: true,
+          },
+        },
+      },
     });
 
     console.log(`Payout ${payoutId} marked as PAID`);
 
-    // TODO: Send email notification to operator (TASK_12)
+    // Send payout confirmation email to operator
+    try {
+      const operatorUser = await prisma.user.findFirst({
+        where: { operatorOrganizationId: updatedPayout.operatorOrgId },
+      });
+
+      if (operatorUser) {
+        // Get bank account info from Stripe
+        let bankName = 'Bank';
+        let bankLast4 = updatedPayout.stripeConnectedAccountId.slice(-4);
+
+        try {
+          const account = await stripeClient.accounts.retrieve(
+            updatedPayout.stripeConnectedAccountId
+          );
+          if (account.external_accounts && account.external_accounts.data.length > 0) {
+            const bankAccount = account.external_accounts.data[0] as Stripe.BankAccount;
+            bankName = bankAccount.bank_name || 'Bank';
+            bankLast4 = bankAccount.last4;
+          }
+        } catch (error) {
+          console.error('Error fetching bank account details:', error);
+        }
+
+        // Calculate expected arrival (3 business days)
+        const expectedArrival = new Date(updatedPayout.paidAt!);
+        expectedArrival.setDate(expectedArrival.getDate() + 3);
+        const arrivalStr = `${expectedArrival.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+        })}-${new Date(updatedPayout.paidAt!.getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        })}`;
+
+        await notificationService.sendPayoutConfirmation(operatorUser.id, {
+          operatorName: updatedPayout.operatorOrg.name,
+          grossAmount: Number(updatedPayout.grossAmount),
+          platformFee: Number(updatedPayout.feeAmount),
+          netPayout: Number(updatedPayout.netAmount),
+          currency: updatedPayout.currency,
+          bankAccountLast4: bankLast4,
+          bankName,
+          expectedArrival: arrivalStr,
+          payoutUrl: `${env.FRONTEND_URL}/payouts/${updatedPayout.id}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending payout confirmation:', error);
+      // Don't fail if notification fails
+    }
+  }
+
+  /**
+   * Handle transfer.failed webhook (payout failed)
+   */
+  async handleTransferFailed(transfer: Stripe.Transfer): Promise<void> {
+    const payoutId = transfer.metadata?.payout_id;
+
+    if (!payoutId) {
+      console.error('Transfer missing payout_id in metadata', transfer.id);
+      return;
+    }
+
+    const payout = await prisma.payout.findUnique({
+      where: { id: payoutId },
+      include: {
+        operatorOrg: true,
+        payment: {
+          include: {
+            invoice: true,
+          },
+        },
+      },
+    });
+
+    if (!payout) {
+      console.error('Payout not found for transfer', transfer.id);
+      return;
+    }
+
+    const failureReason = transfer.failure_message || 'Transfer failed';
+
+    // Update payout status to FAILED
+    await prisma.payout.update({
+      where: { id: payoutId },
+      data: {
+        status: PayoutStatus.FAILED,
+      },
+    });
+
+    console.log(`Payout ${payoutId} marked as FAILED: ${failureReason}`);
+
+    // Send payout failed email to operator
+    try {
+      const operatorUser = await prisma.user.findFirst({
+        where: { operatorOrganizationId: payout.operatorOrgId },
+      });
+
+      if (operatorUser) {
+        // Get bank account info
+        let bankLast4 = payout.stripeConnectedAccountId.slice(-4);
+
+        try {
+          const account = await stripeClient.accounts.retrieve(
+            payout.stripeConnectedAccountId
+          );
+          if (account.external_accounts && account.external_accounts.data.length > 0) {
+            const bankAccount = account.external_accounts.data[0] as Stripe.BankAccount;
+            bankLast4 = bankAccount.last4;
+          }
+        } catch (error) {
+          console.error('Error fetching bank account details:', error);
+        }
+
+        await notificationService.sendPayoutFailed(operatorUser.id, {
+          operatorName: payout.operatorOrg.name,
+          netPayout: Number(payout.netAmount),
+          currency: payout.currency,
+          invoiceNumber: payout.payment.invoice.invoiceNumber,
+          bankAccountLast4: bankLast4,
+          failureReason,
+          updateBankUrl: `${env.FRONTEND_URL}/payouts/setup`,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending payout failed notification:', error);
+      // Don't fail if notification fails
+    }
   }
 
   /**

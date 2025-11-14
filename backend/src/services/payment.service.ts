@@ -2,6 +2,8 @@ import { PrismaClient, PaymentStatus, PaymentMethod, InvoiceStatus, Prisma } fro
 import { stripeClient } from '../config/stripe.config';
 import Stripe from 'stripe';
 import { payoutService } from './payout.service';
+import { notificationService } from './notification.service';
+import { env } from '../config/env';
 
 const prisma = new PrismaClient();
 
@@ -190,14 +192,97 @@ export class PaymentService {
     console.log(`Payment succeeded for invoice ${invoice.invoiceNumber}`);
 
     // Create payout for operator
+    let payoutId: string | undefined;
     try {
-      await payoutService.createPayout(payment.id);
+      const payout = await payoutService.createPayout(payment.id);
+      payoutId = payout.payout_id;
     } catch (error) {
       console.error('Error creating payout:', error);
       // Don't fail payment if payout creation fails
     }
 
-    // TODO: Send payment confirmation emails (TASK_12)
+    // Send payment confirmation emails
+    try {
+      // Get operator and site owner users
+      const [operatorUser, siteOwnerUser] = await Promise.all([
+        prisma.user.findFirst({
+          where: { operatorOrganizationId: invoice.operatorOrgId },
+        }),
+        prisma.user.findFirst({
+          where: { siteOwnerOrganizationId: invoice.siteOwnerOrgId },
+        }),
+      ]);
+
+      // Get operator and site owner orgs
+      const [operatorOrg, siteOwnerOrg] = await Promise.all([
+        prisma.organization.findUnique({
+          where: { id: invoice.operatorOrgId },
+        }),
+        prisma.organization.findUnique({
+          where: { id: invoice.siteOwnerOrgId },
+        }),
+      ]);
+
+      // Get payment method details
+      let paymentMethodDetails = 'Card';
+      if (paymentMethodDetails?.type === 'card') {
+        const card = charge?.payment_method_details?.card;
+        if (card) {
+          paymentMethodDetails = `${card.brand} ending in ${card.last4}`;
+        }
+      }
+
+      // Send confirmation to client
+      if (siteOwnerUser && operatorOrg) {
+        await notificationService.sendPaymentConfirmationClient(siteOwnerUser.id, {
+          clientName: siteOwnerOrg?.name || 'Customer',
+          operatorName: operatorOrg.name,
+          operatorEmail: operatorUser?.email || env.ADMIN_EMAIL,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: Number(payment.amount),
+          currency: payment.currency,
+          paymentDate: payment.paidAt || new Date(),
+          paymentMethod: paymentMethodDetails,
+          receiptUrl: `${env.FRONTEND_URL}/payments/${payment.id}`,
+        });
+      }
+
+      // Send confirmation to operator
+      if (operatorUser && siteOwnerOrg && payoutId) {
+        // Get payout details for notification
+        const payout = await prisma.payout.findUnique({
+          where: { id: payoutId },
+        });
+
+        if (payout) {
+          const scheduledDate = payout.scheduledAt || new Date();
+          scheduledDate.setDate(scheduledDate.getDate() + 1);
+
+          // Get bank account last 4 digits
+          const operatorOrgFull = await prisma.organization.findUnique({
+            where: { id: invoice.operatorOrgId },
+          });
+          const bankAccountLast4 = operatorOrgFull?.stripeConnectedAccountId?.slice(-4) || '****';
+
+          await notificationService.sendPaymentConfirmationOperator(operatorUser.id, {
+            operatorName: operatorOrg?.name || 'Operator',
+            clientName: siteOwnerOrg.name,
+            invoiceNumber: invoice.invoiceNumber,
+            grossAmount: Number(payment.amount),
+            currency: payment.currency,
+            paymentDate: payment.paidAt || new Date(),
+            netPayout: Number(payout.netAmount),
+            platformFee: Number(payout.platformFee),
+            expectedPayoutDate: scheduledDate,
+            bankAccountLast4,
+            payoutUrl: `${env.FRONTEND_URL}/payouts/${payoutId}`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error sending payment confirmation emails:', error);
+      // Don't fail payment if notifications fail
+    }
   }
 
   /**

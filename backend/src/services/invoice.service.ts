@@ -1,4 +1,6 @@
 import { PrismaClient, InvoiceStatus, Prisma } from '@prisma/client';
+import { notificationService } from './notification.service';
+import { env } from '../config/env';
 
 const prisma = new PrismaClient();
 
@@ -489,10 +491,45 @@ export class InvoiceService {
         lineItems: true,
         operatorOrg: true,
         siteOwnerOrg: true,
+        project: true,
       },
     });
 
-    // TODO: Send email notification to site owner with invoice PDF
+    // Send email notification to site owner
+    try {
+      // Get a user from the site owner organization
+      const siteOwnerUser = await prisma.user.findFirst({
+        where: {
+          siteOwnerOrganizationId: updatedInvoice.siteOwnerOrgId,
+        },
+      });
+
+      if (siteOwnerUser) {
+        // Get operator organization details
+        const operatorOrg = updatedInvoice.operatorOrg;
+        const operatorUser = await prisma.user.findFirst({
+          where: {
+            operatorOrganizationId: updatedInvoice.operatorOrgId,
+          },
+        });
+
+        await notificationService.sendInvoiceSent(siteOwnerUser.id, {
+          clientName: updatedInvoice.siteOwnerOrg.name,
+          operatorName: operatorOrg.name,
+          operatorEmail: operatorUser?.email || env.ADMIN_EMAIL,
+          invoiceNumber: updatedInvoice.invoiceNumber,
+          amount: Number(updatedInvoice.totalAmount),
+          currency: updatedInvoice.currency,
+          dueDate: updatedInvoice.dueDate,
+          projectName: updatedInvoice.project?.name,
+          paymentTerms: updatedInvoice.paymentTerms || 'Net 30',
+          invoiceUrl: `${env.FRONTEND_URL}/invoices/${updatedInvoice.id}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending invoice notification:', error);
+      // Don't fail the invoice send if notification fails
+    }
 
     return {
       invoice_id: updatedInvoice.id,
