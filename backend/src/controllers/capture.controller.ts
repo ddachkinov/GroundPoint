@@ -505,6 +505,44 @@ class CaptureController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  /**
+   * GET /api/v1/captures/:id/playback-url
+   * Get playback URL for video captures
+   */
+  async getPlaybackUrl(req: Request, res: Response): Promise<void> {
+    try {
+      const operatorOrgId = req.user?.operatorOrganizationId;
+
+      if (!operatorOrgId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
+      const result = await captureService.getPlaybackUrl(req.params.id, operatorOrgId);
+
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error getting playback URL:', error);
+
+      if (error.message === 'Capture not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message === 'Not authorized to access this capture') {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+
+      if (error.message === 'Capture is not a video') {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const captureController = new CaptureController();

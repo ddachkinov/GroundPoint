@@ -78,6 +78,37 @@ class CaptureService {
       throw new Error('Invalid angle for this site');
     }
 
+    // Determine file type (image or video)
+    const isVideo = input.file_type.startsWith('video/');
+    const fileType = isVideo ? CaptureType.VIDEO : CaptureType.IMAGE;
+
+    // Video upload requires Business or Enterprise tier
+    if (isVideo) {
+      const subscription = await prisma.operatorSubscription.findUnique({
+        where: { organizationId: operatorOrgId },
+      });
+
+      const tier = subscription?.tier || 'FREE';
+
+      if (tier !== 'BUSINESS' && tier !== 'ENTERPRISE') {
+        throw new Error('Video uploads require Business or Enterprise tier subscription');
+      }
+
+      // Check file size limits based on tier
+      const maxSize = tier === 'ENTERPRISE'
+        ? 2 * 1024 * 1024 * 1024  // 2 GB
+        : 500 * 1024 * 1024;       // 500 MB
+
+      if (input.file_size > maxSize) {
+        throw new Error(`Video file size exceeds tier limit of ${tier === 'ENTERPRISE' ? '2 GB' : '500 MB'}`);
+      }
+
+      // Validate video file types
+      if (!['video/mp4', 'video/quicktime'].includes(input.file_type)) {
+        throw new Error('Only MP4 and MOV video formats are supported');
+      }
+    }
+
     // TODO: Check storage quota (requires subscription/billing implementation)
     // TODO: Check monthly upload count quota
 
@@ -90,7 +121,7 @@ class CaptureService {
         captureDate: new Date(), // Temporary, will be updated in complete
         filePath: '', // Will be updated in complete
         fileSize: BigInt(input.file_size),
-        fileType: CaptureType.IMAGE,
+        fileType,
         processingStatus: ProcessingStatus.UPLOADED,
       },
     });
@@ -798,6 +829,64 @@ class CaptureService {
       captures: result,
       subscription_tier: tier,
       feature_enabled: featureEnabled,
+    };
+  }
+
+  /**
+   * Get playback URL for video captures
+   */
+  async getPlaybackUrl(
+    captureId: string,
+    operatorOrgId: string
+  ): Promise<{
+    capture_id: string;
+    playback_url: string | null;
+    thumbnail_url: string | null;
+    duration_seconds: number | null;
+    resolutions: string[];
+  }> {
+    const capture = await prisma.capture.findUnique({
+      where: { id: captureId },
+      include: {
+        site: {
+          include: {
+            project: true,
+          },
+        },
+      },
+    });
+
+    if (!capture) {
+      throw new Error('Capture not found');
+    }
+
+    if (capture.site.project.operatorOrganizationId !== operatorOrgId) {
+      throw new Error('Not authorized to access this capture');
+    }
+
+    if (capture.fileType !== CaptureType.VIDEO) {
+      throw new Error('Capture is not a video');
+    }
+
+    // Generate playback URL (for now, return original video file URL)
+    // In production, this would return HLS manifest URL from transcoding service
+    let playbackUrl: string | null = null;
+    let thumbnailUrl: string | null = null;
+
+    if (capture.filePath) {
+      playbackUrl = await storageService.generateDownloadUrl(capture.filePath);
+    }
+
+    if (capture.thumbnailPath) {
+      thumbnailUrl = await storageService.generateDownloadUrl(capture.thumbnailPath);
+    }
+
+    return {
+      capture_id: capture.id,
+      playback_url: playbackUrl,
+      thumbnail_url: thumbnailUrl,
+      duration_seconds: null, // TODO: Extract from video metadata
+      resolutions: ['original'], // TODO: Add transcoded resolutions
     };
   }
 }

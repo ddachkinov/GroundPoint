@@ -71,6 +71,13 @@ router.get('/:id', (req, res) => captureController.getCapture(req, res));
 router.delete('/:id', (req, res) => captureController.deleteCapture(req, res));
 
 /**
+ * Get playback URL for video captures
+ * GET /api/v1/captures/:id/playback-url
+ * Accessible by: All authenticated users (video captures only)
+ */
+router.get('/:id/playback-url', (req, res) => captureController.getPlaybackUrl(req, res));
+
+/**
  * Regenerate thumbnail
  * POST /api/v1/captures/:id/regenerate-thumbnail
  * Requires: Operator Admin or uploader
