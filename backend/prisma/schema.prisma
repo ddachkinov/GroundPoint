@@ -122,6 +122,7 @@ model User {
   role                           UserRole
   organizationId                 String            @map("organization_id")
   organization                   Organization      @relation(fields: [organizationId], references: [id])
+  language                       String            @default("bg")
   mfaEnabled                     Boolean           @default(false) @map("mfa_enabled")
   mfaSecret                      String?           @map("mfa_secret")
   emailVerified                  Boolean           @default(false) @map("email_verified")

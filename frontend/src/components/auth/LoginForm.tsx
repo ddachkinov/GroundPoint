@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -31,7 +33,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email address
+          {t('auth.emailAddress')}
         </label>
         <input
           id="email"
@@ -47,7 +49,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Password
+          {t('auth.password')}
         </label>
         <input
           id="password"
@@ -72,7 +74,7 @@ export function LoginForm() {
             className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
           />
           <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-            Remember me
+            {t('auth.rememberMe')}
           </label>
         </div>
 
@@ -81,7 +83,7 @@ export function LoginForm() {
             to="/reset-password"
             className="font-medium text-primary-600 hover:text-primary-500"
           >
-            Forgot password?
+            {t('auth.forgotPassword')}
           </Link>
         </div>
       </div>
@@ -92,14 +94,14 @@ export function LoginForm() {
           disabled={isLoading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Signing in...' : 'Sign in'}
+          {isLoading ? t('auth.signingIn') : t('auth.signIn')}
         </button>
       </div>
 
       <div className="text-center text-sm">
-        <span className="text-gray-600">Don't have an account? </span>
+        <span className="text-gray-600">{t('auth.dontHaveAccount')} </span>
         <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
-          Create account
+          {t('auth.createAccount')}
         </Link>
       </div>
     </form>
