@@ -11,16 +11,24 @@ import ComparisonPage from './pages/ComparisonPage';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { InvoicesPage } from './pages/InvoicesPage';
+import { LandingPage } from './pages/LandingPage';
+import { DemoPage } from './pages/DemoPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { DeploymentPage } from './pages/DeploymentPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/demo" element={<DemoPage />} />
+      <Route path="/deploy" element={<DeploymentPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
 
       {/* Protected routes */}
       <Route
@@ -88,11 +96,8 @@ function App() {
         }
       />
 
-      {/* Default route */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
       {/* 404 - Not found */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
