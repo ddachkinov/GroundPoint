@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
@@ -11,22 +12,26 @@ import ComparisonPage from './pages/ComparisonPage';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { InvoicesPage } from './pages/InvoicesPage';
+import { SiteOwnerDashboardPage } from './pages/SiteOwnerDashboardPage';
+import { ClientInvoicesPage } from './pages/ClientInvoicesPage';
+import { ClientInvoicePaymentPage } from './pages/ClientInvoicePaymentPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      {/* Protected routes */}
+      {/* Protected Operator routes */}
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <DashboardPage />
           </ProtectedRoute>
         }
@@ -34,7 +39,7 @@ function App() {
       <Route
         path="/projects"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <ProjectsPage />
           </ProtectedRoute>
         }
@@ -42,7 +47,7 @@ function App() {
       <Route
         path="/projects/:id"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <ProjectDetailPage />
           </ProtectedRoute>
         }
@@ -50,7 +55,7 @@ function App() {
       <Route
         path="/timeline"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <TimelinePage />
           </ProtectedRoute>
         }
@@ -58,7 +63,7 @@ function App() {
       <Route
         path="/compare"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <ComparisonPage />
           </ProtectedRoute>
         }
@@ -66,7 +71,7 @@ function App() {
       <Route
         path="/pricing"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <PricingPage />
           </ProtectedRoute>
         }
@@ -74,7 +79,7 @@ function App() {
       <Route
         path="/subscription"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <SubscriptionPage />
           </ProtectedRoute>
         }
@@ -82,17 +87,48 @@ function App() {
       <Route
         path="/invoices"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole="OPERATOR">
             <InvoicesPage />
           </ProtectedRoute>
         }
       />
 
-      {/* Default route */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Protected Site Owner routes */}
+      <Route
+        path="/client/dashboard"
+        element={
+          <ProtectedRoute requireRole="SITE_OWNER">
+            <SiteOwnerDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/client/invoices"
+        element={
+          <ProtectedRoute requireRole="SITE_OWNER">
+            <ClientInvoicesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/client/invoices/:id"
+        element={
+          <ProtectedRoute requireRole="SITE_OWNER">
+            <ClientInvoicePaymentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/client/invoices/:id/pay"
+        element={
+          <ProtectedRoute requireRole="SITE_OWNER">
+            <ClientInvoicePaymentPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 - Not found */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
