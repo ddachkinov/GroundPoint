@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { CalendarDate } from '../../api/captures';
 

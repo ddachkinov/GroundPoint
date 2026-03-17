@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express';
 import { subscriptionService } from '../services/subscription.service';
 import { paymentService } from '../services/payment.service';

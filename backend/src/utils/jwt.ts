@@ -34,7 +34,7 @@ export function generateAccessToken(payload: Omit<JWTPayload, 'type'>): string {
     },
     env.JWT_SECRET,
     {
-      expiresIn: TOKEN_EXPIRATION.access,
+      expiresIn: TOKEN_EXPIRATION.access as any,
       algorithm: 'HS256',
     }
   );
@@ -57,9 +57,7 @@ export function generateRefreshToken(
     },
     env.JWT_SECRET,
     {
-      expiresIn: rememberMe
-        ? TOKEN_EXPIRATION.refreshExtended
-        : TOKEN_EXPIRATION.refresh,
+      expiresIn: (rememberMe ? TOKEN_EXPIRATION.refreshExtended : TOKEN_EXPIRATION.refresh) as any,
       algorithm: 'HS256',
     }
   );

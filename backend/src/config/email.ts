@@ -22,7 +22,7 @@ export const emailConfig = {
       template: 'welcome-operator',
     },
     welcomeSiteOwner: {
-      subject: 'You've been invited to a project on GroundPoint',
+      subject: "You've been invited to a project on GroundPoint",
       template: 'welcome-site-owner',
     },
   },

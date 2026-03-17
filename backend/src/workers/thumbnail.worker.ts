@@ -94,7 +94,7 @@ async function updateCaptureStatus(
     data: {
       processingStatus: status,
       thumbnailPath: thumbnailPath || undefined,
-      errorMessage: errorMessage || undefined,
+      notes: errorMessage || undefined,
     },
   });
 }

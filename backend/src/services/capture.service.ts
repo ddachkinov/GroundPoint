@@ -616,7 +616,7 @@ class CaptureService {
       where: { id: captureId },
       data: {
         processingStatus: ProcessingStatus.PROCESSING,
-        errorMessage: null,
+        notes: null,
       },
     });
 
@@ -769,7 +769,7 @@ class CaptureService {
         },
         site: {
           project: {
-            operatorOrganizationId: operatorOrgId,
+            operatorOrgId: operatorOrgId,
           },
         },
       },
@@ -860,7 +860,7 @@ class CaptureService {
       throw new Error('Capture not found');
     }
 
-    if (capture.site.project.operatorOrganizationId !== operatorOrgId) {
+    if (capture.site.project.operatorOrgId !== operatorOrgId) {
       throw new Error('Not authorized to access this capture');
     }
 

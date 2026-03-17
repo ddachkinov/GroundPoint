@@ -53,3 +53,7 @@ backend/prisma/migrations/**/*.sql
 
 # Platform specific
 Thumbs.db
+backend/dist/
+frontend/dist/
+backend/node_modules/
+frontend/node_modules/

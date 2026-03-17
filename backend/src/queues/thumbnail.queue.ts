@@ -51,7 +51,6 @@ export async function enqueueThumbnailGeneration(
     data,
     {
       jobId: `thumbnail-${data.captureId}`, // Unique job ID for idempotency
-      timeout: 5 * 60 * 1000, // 5 minute timeout per job
     }
   );
 
