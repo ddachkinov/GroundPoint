@@ -159,6 +159,16 @@ export const invoicesAPI = {
   },
 
   /**
+   * Create payment intent for invoice
+   */
+  createPaymentIntent: async (invoiceId: string): Promise<{ client_secret: string; payment_intent_id: string; amount: number; currency: string }> => {
+    const response = await apiClient.post<{ client_secret: string; payment_intent_id: string; amount: number; currency: string }>(
+      `/invoices/${invoiceId}/payment-intent`
+    );
+    return response.data;
+  },
+
+  /**
    * Download invoice PDF
    */
   downloadPDF: async (invoiceId: string): Promise<Blob> => {

@@ -11,6 +11,8 @@ import ComparisonPage from './pages/ComparisonPage';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { InvoicesPage } from './pages/InvoicesPage';
+import { InvoiceDetailPage } from './pages/InvoiceDetailPage';
+import { PayoutPage } from './pages/PayoutPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -84,6 +86,22 @@ function App() {
         element={
           <ProtectedRoute>
             <InvoicesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/invoices/:id"
+        element={
+          <ProtectedRoute>
+            <InvoiceDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payouts"
+        element={
+          <ProtectedRoute>
+            <PayoutPage />
           </ProtectedRoute>
         }
       />

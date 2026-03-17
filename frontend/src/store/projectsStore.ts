@@ -24,6 +24,7 @@ interface ProjectsState {
   offset: number;
 
   // Sites data
+  sites: Site[];
   currentSite: Site | null;
 
   // UI state
@@ -42,6 +43,7 @@ interface ProjectsState {
   refreshProjects: () => Promise<void>;
 
   // Actions - Sites
+  listSites: (projectId: string) => Promise<void>;
   getSite: (siteId: string) => Promise<void>;
   createSite: (projectId: string, input: CreateSiteInput) => Promise<Site>;
   updateSite: (siteId: string, input: UpdateSiteInput) => Promise<Site>;
@@ -63,6 +65,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   total: 0,
   limit: 50,
   offset: 0,
+  sites: [],
   currentSite: null,
   isLoading: false,
   isCreating: false,
@@ -209,6 +212,28 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   refreshProjects: async () => {
     const { limit, offset } = get();
     await get().listProjects({ limit, offset });
+  },
+
+  /**
+   * List sites for a project
+   */
+  listSites: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const project = await projectsAPI.getProject(projectId);
+      set({
+        sites: project.sites || [],
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      set({
+        sites: [],
+        isLoading: false,
+        error: getErrorMessage(error),
+      });
+      throw error;
+    }
   },
 
   /**
